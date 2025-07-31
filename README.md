@@ -5,7 +5,7 @@ I am a Data Analyst and Backend Engineer. I love getting to know how things work
 ### 🛠 &nbsp;Tech Stack
 
 ![Python](https://img.shields.io/badge/-Python-05122A?style=flat&logo=python)&nbsp;
-![R](https://simpleicons.org/icons/r.svg)&nbsp;
+![R](https://img.shields.io/badge/-Python-05122A?style=flat&logo=r)&nbsp;
 ![NumPy](https://img.shields.io/badge/numpy%20-%23013243.svg?&style=flat&logo=numpy&logoColor=white)&nbsp;
 ![Pandas](https://img.shields.io/badge/pandas%20-%23150458.svg?&style=flat&logo=pandas&logoColor=white)&nbsp;
 ![Tidyverse](https://simpleicons.org/icons/tidyverse.svg)&nbsp;
