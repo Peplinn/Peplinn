@@ -5,10 +5,10 @@ I am a Data Analyst and Backend Engineer. I love getting to know how things work
 ### 🛠 &nbsp;Tech Stack
 
 ![Python](https://img.shields.io/badge/-Python-05122A?style=flat&logo=python)&nbsp;
-![R](https://img.shields.io/badge/-Python-05122A?style=flat&logo=r)&nbsp;
+![R](https://img.shields.io/badge/-R-05122A?style=flat&logo=r)&nbsp;
 ![NumPy](https://img.shields.io/badge/numpy%20-%23013243.svg?&style=flat&logo=numpy&logoColor=white)&nbsp;
 ![Pandas](https://img.shields.io/badge/pandas%20-%23150458.svg?&style=flat&logo=pandas&logoColor=white)&nbsp;
-![Tidyverse](https://simpleicons.org/icons/tidyverse.svg)&nbsp;
+![Tidyverse](https://img.shields.io/badge/-tidyverse-05122A?style=flat&logo=tidyverse)&nbsp;
 ![JavaScript](https://img.shields.io/badge/-JavaScript-05122A?style=flat&logo=javascript)&nbsp;
 ![Java](https://img.shields.io/badge/-Java-05122A?style=flat&logo=Java&logoColor=FFA518)&nbsp;
 ![C](https://img.shields.io/badge/-C-05122A?style=flat&logo=C&logoColor=A8B9CC)&nbsp;
@@ -25,5 +25,5 @@ I am a Data Analyst and Backend Engineer. I love getting to know how things work
 ### 📫 &nbsp; How to reach me:
 
 
-<a href="https://www.linkedin.com/in/chidiebube-oluoma/"><img alt="LinkedIn" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png"/></a> &nbsp;
+<a href="https://www.linkedin.com/in/chidiebube-oluoma/"><img alt="LinkedIn" src="https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg"/></a> &nbsp;
 <a href="mailto:asinghdhadwal@gmail.com"><img alt="Gmail" src="https://img.shields.io/badge/Gmail-D14836?style=flat&logo=gmail&logoColor=white" /></a> &nbsp;
