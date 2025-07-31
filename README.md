@@ -1,4 +1,4 @@
-### Hello👋 I'm Peplin
+### Hello! I'm Peplin
 
 I like to understand things
 
