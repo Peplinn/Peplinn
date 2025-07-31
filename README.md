@@ -25,5 +25,5 @@ I am a Data Analyst and Backend Engineer. I love getting to know how things work
 ### 📫 &nbsp; How to reach me:
 
 
-<a href="https://www.linkedin.com/in/chidiebube-oluoma/"><img alt="LinkedIn" src="https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg"/></a> &nbsp;
+<a href="https://www.linkedin.com/in/chidiebube-oluoma/"><img alt="LinkedIn"/></a> &nbsp;
 <a href="mailto:asinghdhadwal@gmail.com"><img alt="Gmail" src="https://img.shields.io/badge/Gmail-D14836?style=flat&logo=gmail&logoColor=white" /></a> &nbsp;
