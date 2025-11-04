@@ -28,11 +28,11 @@ Next, we will introduce each aspect in detail.
 
 ### Configuration Files
 
-See [Configuration Files](/docs/setup/configuration) for details.
+See [Configuration Files](/vault/setup/configuration) for details.
 
 #### Waline Comment System
 
-See [Waline Comment System](/docs/integrations/comment) for details.
+See [Waline Comment System](/vault/integrations/comment) for details.
 
 #### Footer
 

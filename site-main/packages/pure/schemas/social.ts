@@ -28,7 +28,6 @@ export const SocialLinksSchema = () =>
           reddit: 'Reddit',
           bluesky: 'BlueSky',
           tiktok: 'TikTok',
-          weibo: 'Weibo',
           steam: 'Steam',
           bilibili: 'Bilibili',
           zhihu: 'Zhihu',

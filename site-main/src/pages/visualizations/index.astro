@@ -1,0 +1,17 @@
+---
+import config from 'virtual:config'
+
+import PageLayout from '@/layouts/CommonPage.astro'
+
+const headings = [
+  { depth: 2, slug: 'maps', text: 'Maps' },
+  { depth: 2, slug: 'tidytuesday', text: 'TidyTuesday' }
+]
+
+
+const linksConf = config.integ.links
+---
+
+<PageLayout title='Visualizations' {headings}>
+  <h2 id='common-links'>Visualizations</h2>
+</PageLayout>
