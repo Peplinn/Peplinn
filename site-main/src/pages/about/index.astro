@@ -31,7 +31,7 @@ const headings = [
   <div class="flex items-center gap-x-4 mt-6">
     {
       Object.entries(social)
-        .filter(([platform]) => ['github', 'linkedin'].includes(platform))
+        .filter(([platform]) => ['github', 'linkedin', 'email'].includes(platform))
         .map(([platform, { label, url }]) => (
           <a
             class="inline-block text-muted-foreground transition-all hover:text-muted-foreground/75"

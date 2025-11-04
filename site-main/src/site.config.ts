@@ -50,7 +50,7 @@ export const theme: ThemeUserConfig = {
       { title: 'Vault', link: '/vault' },
       { title: 'Blog', link: '/blog' },
       { title: 'Projects', link: '/projects' },
-      { title: 'Visualizations', link: '/visualizations' },
+      // { title: 'Visualizations', link: '/visualizations' },
       { title: 'About', link: '/about' }
     ]
   },
@@ -73,7 +73,8 @@ export const theme: ThemeUserConfig = {
     /** Optional details about the social media accounts for this site. */
     social: {
       github: 'https://github.com/Peplinn',
-      linkedin: 'https://linkedin.com/in/chidiebube-oluoma/'
+      linkedin: 'https://linkedin.com/in/chidiebube-oluoma/',
+      email: 'mailto:ebube@ebubeoluoma.com'
     }
   },
 

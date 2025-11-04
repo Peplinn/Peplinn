@@ -12,7 +12,7 @@ export const HeaderMenuSchema = () =>
       { title: 'Vault', link: '/vault' },
       { title: 'Blog', link: '/blog' },
       { title: 'Projects', link: '/projects' },
-      { title: 'Visualizations', link: '/visualizations' },
+      // { title: 'Visualizations', link: '/visualizations' },
       { title: 'About', link: '/about' }
     ])
     .describe('The header menu items for your site.')
