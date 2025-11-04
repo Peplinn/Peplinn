@@ -74,7 +74,7 @@ export const theme: ThemeUserConfig = {
     social: {
       github: 'https://github.com/Peplinn',
       linkedin: 'https://linkedin.com/in/chidiebube-oluoma/'
-     }
+    }
   },
 
   content: {
