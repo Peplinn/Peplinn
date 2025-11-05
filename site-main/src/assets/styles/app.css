@@ -78,3 +78,9 @@ a {
   color: hsl(var(--foreground)) !important;
   background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
 }
+
+.prose :where(blockquote):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+  color: hsl(var(--foreground)) !important;
+  border-left-color: hsl(var(--border)) !important;
+  background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
+}
