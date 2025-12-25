@@ -1,8 +1,8 @@
 ---
 import { Button, Collapse, Spoiler, Timeline } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
-import Substats from '@/components/about/Substats.astro'
-import ToolSection from '@/components/about/ToolSection.astro'
+// import Substats from '@/components/about/Substats.astro'
+// import ToolSection from '@/components/about/ToolSection.astro'
 import config from 'virtual:config'
 import { Icon } from '../../../packages/pure/components/user'
 
@@ -10,18 +10,19 @@ const footerConf = config.footer
 let social = footerConf.social || {}
 
 const headings = [
-  { depth: 2, slug: 'hobbies', text: 'Hobbies' },
-  { depth: 2, slug: 'tools', text: 'Tools' },
-  { depth: 2, slug: 'about-blog', text: 'About Blog' }
+  { depth: 2, slug: 'now', text: 'Now' },
+  { depth: 2, slug: 'about-site', text: 'About Site' }
 ]
 ---
 
 <PageLayout title='About' {headings}>
-  <p>Data Scientist | Backend Engineer</p>
+  <p>I am a data scientist and backend engineer based in Ontario, Canada. I'm interested in work that creates meaningful positive impact and drawn to problems that affect people's daily lives.</p>
   <p>
-    Lorem ipsum dolor sit amet, vidit suscipit at mei. Quem denique mea id. Usu ei regione indoctum
-    dissentiunt, cu meliore fuisset mei, vel quod voluptua ne. Ex dicat impedit mel, at eum oratio
-    possit voluptatum.
+    Much of my work centers on problems in climate and urbanization, which depend on deliberate human intervention for solution.
+    I'm also experimenting with machine learning models and advanced statistical methods through my projects.
+  </p>
+  <p>
+    When I'm not working, I spend time learning, writing, making art, and gaming. Unsurprisingly, these often feature in the work that I do.
   </p>
   <p>
     Stay curious.
@@ -31,7 +32,7 @@ const headings = [
   <div class="flex items-center gap-x-4 mt-6">
     {
       Object.entries(social)
-        .filter(([platform]) => ['github', 'linkedin', 'email'].includes(platform))
+        .filter(([platform]) => ['github', 'linkedin', 'email',].includes(platform))
         .map(([platform, { label, url }]) => (
           <a
             class="inline-block text-muted-foreground transition-all hover:text-muted-foreground/75"
@@ -44,114 +45,14 @@ const headings = [
     }
   </div>
 
-  {/* general-talk */}
-  <h2 id='hobbies'>Hobbies</h2>
-  <ul>
-    <li>Lorem ipsum dolor sit amet, vidit suscipit at mei.</li>
-    <li>
-      Quem denique mea id. Usu ei regione indoctum dissentiunt, cu meliore fuisset mei, vel quod
-      voluptua ne.
-    </li>
-    <li>Ex dicat impedit mel, at eum oratio possit voluptatum.</li>
-    <li>Impetus fuisset ullamcorper pri cu, his posse iisque ad, aliquam honestatis usu id.</li>
-  </ul>
-  <p>
-    I also play video games.
-  </p>
-  <Substats
-    stats={[
-      {
-        platform: 'Steam',
-        icon: 'steam',
-        color: '#50769d',
-        link: 'https://steamcommunity.com/id/sirpeplin',
-        text: 'games',
-        api: 'steamgames/76561198980105606'
-      }
-    ]}
-  />
+  {/* now */}
+  <h2 id='now'>Now</h2>
+  <p>It's <strong>Christmas Day 2025</strong>. I have just created this section and am reworking this and the home page.</p>
+  <p>I have also been drawing again. I want to start working on my shading soon.</p>
 
-  {/* tools */}
-  <h2 id='tools'>Tools</h2>
-  <p>Here are the tools I currently use:</p>
-  <ToolSection
-    class='mb-5'
-    title='Design'
-    tools={[
-      {
-        name: 'Figma',
-        description: '2D Designs',
-        href: 'https://www.figma.com/',
-        icon: import('@/assets/tools/figma.svg?raw')
-      }
-    ]}
-  />
-  <ToolSection
-    class='mb-5'
-    title='Development'
-    tools={[
-      {
-        name: 'VS Code',
-        description: 'IDE',
-        href: 'https://code.visualstudio.com/',
-        icon: import('@/assets/tools/vscode.svg?raw')
-      },
-      {
-        name: 'RStudio',
-        description: 'IDE',
-        href: 'https://posit.co/download/rstudio-desktop/',
-        icon: import('@/assets/tools/rstudio.svg?raw')
-      }
-    ]}
-  />
-  <ToolSection
-    class='mb-5'
-    title='Environment'
-    tools={[
-      {
-        name: 'Windows 11',
-        description: 'Primary OS',
-        href: 'https://news.microsoft.com/windows11-general-availability/',
-        icon: import('@/assets/tools/windows11.svg?raw')
-      },
-      {
-        name: 'Ubuntu 24.04 LTS',
-        description: 'Secondary OS',
-        href: 'https://ubuntu.com/',
-        icon: import('@/assets/tools/ubuntu.svg?raw')
-      },
-    ]}
-  />
-
-  {/* gossips */}
-  <!-- <h2 id='gossips'>Gossips</h2>
-  <Collapse title='Lorem ipsum'>
-    Lorem ipsum dolor sit amet, vidit suscipit at mei. Quem denique mea id. Usu ei regione indoctum
-    dissentiunt, cu meliore fuisset mei, vel quod voluptua ne. Ex dicat impedit mel, at eum oratio
-    possit voluptatum.
-  </Collapse> -->
 
   {/* about-blog */}
-  <h2 id='about-blog'>About Blog</h2>
-  <!-- <p>Website history:</p>
-  <Timeline
-    events={[
-      {
-        date: '2024-04-29',
-        content:
-          'Website refactored using <a href="https://astro.build/" target="_blank">Astro</a> and <a href="https://github.com/srleom/astro-theme-resume" target="_blank">Astro Theme Resume</a>'
-      },
-      {
-        date: '2024-07-26',
-        content:
-          'Website abstracted as a theme and published on <a href="https://github.com/cworld1/astro-theme-pure"target="_blank">Github</a>'
-      },
-      {
-        date: '2024-07-27',
-        content: 'Began writing website docs'
-      }
-    ]}
-  /> -->
+  <h2 id='about-site'>About Site</h2>
   <p>
     The content on this website is also supported by the following services:
   </p>
