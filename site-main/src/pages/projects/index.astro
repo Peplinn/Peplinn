@@ -11,32 +11,13 @@ import KeyIcon from '@/assets/icons/key.svg'
 import wechat from '@/assets/wechat-qrcode.jpg'
 
 const headings = [
-  { depth: 2, slug: 'theme', text: 'Theme' },
+  { depth: 2, slug: 'visualizations', text: 'Visualizations' },
   { depth: 2, slug: 'programs', text: 'Programs' },
 ]
 ---
 
 <PageLayout title='Projects' {headings}>
-  <p>Github Activity:</p>
-  <p>
-    <Image
-      src='https://ghchart.rshah.org/659eb9/Peplinn'
-      alt='github activity'
-      inferSize
-      loading='lazy'
-    />
-  </p>
-  <p>
-    If you would like to support this website or would like to collaborate on a project, you can buy me a coffee or contact me.
-  </p>
-  <Button title='Buy me a coffee' class='w-fit' href='https://buymeacoffee.com/peplinn'>
-    <Icon class='size-5' name='receive-money' slot='before' />
-  </Button>
-  <Button title='Say hello' class='w-fit' href='mailto:ebube@ebubeoluoma.com'>
-    <Icon class='size-5' name='email' slot='before' />
-  </Button>
-
-  <h2 id='theme'>Visualizations</h2>
+  <h2 id='visualizations'>Visualizations</h2>
   <ProjectSection
     projects={[
       {
@@ -80,27 +61,17 @@ const headings = [
       }
     ]}
   />
-  <!-- <Collapse title='Some old projects'>
-    <ProjectSection
-      projects={[
-        {
-          name: 'Fyenance',
-          description: 'Add links to each other in search engines',
-          links: [{ type: 'github', href: 'https://github.com/cworld1/search-switcher' }]
-        },
-      ]}
-    />
-  </Collapse> -->
 
-  <!-- sponsorship -->
-  <!-- <h2 id='sponsorship'>Sponsorship</h2>
-  <p>Please leave a message or contact me proactively after sponsorship.</p>
-  <Sponsorship
-    methods={[
-      { name: 'WeChat', icon: 'wechat-pay', image: wechat },
-      { name: 'Alipay', icon: 'alipay', image: alipay }
-    ]}
-  /> -->
+  <p>
+    If you would like to support this website or collaborate on a project, you can buy me a coffee or contact me below.
+  </p>
+  <Button title='Buy me a coffee' class='w-fit' href='https://buymeacoffee.com/peplinn'>
+    <Icon class='size-5' name='receive-money' slot='before' />
+  </Button>
+  <Button title='Say hello' class='w-fit' href='mailto:ebube@ebubeoluoma.com'>
+    <Icon class='size-5' name='email' slot='before' />
+  </Button>
+
 </PageLayout>
 
 <style>
