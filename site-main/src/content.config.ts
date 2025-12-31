@@ -42,7 +42,7 @@ const blog = defineCollection({
 
 // Define docs collection
 const docs = defineCollection({
-  loader: glob({ base: './src/content/vault', pattern: '**/*.{md,mdx}' }),
+  loader: glob({ base: './src/content/essays', pattern: '**/*.{md,mdx}' }),
   schema: () =>
     z.object({
       title: z.string().max(60),
