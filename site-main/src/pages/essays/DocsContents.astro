@@ -16,11 +16,9 @@ const docsByCate = docsCollection.reduce((acc: { [key: string]: typeof docsColle
   return acc
 }, {})
 
-const docCategories = {
-  setup: 'Setup',
-  integrations: 'Integrations',
-  advanced: 'Advanced'
-}
+
+const categoryTitle = (id: string) =>
+  id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
 type Props = {
   title?: boolean
@@ -34,23 +32,26 @@ const { title = true, class: className, ...props } = Astro.props
   {title && <h2 class='text-foreground font-semibold'>ESSAYS</h2>}
   <ul class='mt-4 flex flex-col gap-y-5'>
     {
-      Object.entries(docCategories).map(([id, title]: [string, string]) => (
+      Object.entries(docsByCate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([id, docs]) => (
         <li>
-          <h3 class='text-muted-foreground text-xs tracking-widest uppercase'>{title}</h3>
-          <ul class='mt-2 flex flex-col'>
-            {docsByCate[id]
+          <h3 class="text-muted-foreground text-xs tracking-widest uppercase">
+            {categoryTitle(id)}
+          </h3>
+          <ul class="mt-2 flex flex-col">
+            {[...docs]
               .sort((a, b) => a.data.order - b.data.order)
-              .map((doc) => (
-                <li class='docs-item flex relative ms-2 px-3 py-1 text-foreground/75 transition-all rounded-2xl'>
-                  <a class='flex-1 hover:text-foreground' href={`/essays/${doc.id}`}>
+              .map(doc => (
+                <li class="docs-item flex relative ms-2 px-3 py-1 text-foreground/75 transition-all rounded-2xl">
+                  <a class="flex-1 hover:text-foreground" href={`/essays/${doc.id}`}>
                     {doc.data.title}
                   </a>
                 </li>
               ))}
           </ul>
         </li>
-      ))
-    }
+      ))}
   </ul>
 </docs-toc>
 
