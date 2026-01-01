@@ -1,0 +1,7 @@
+---
+import { sanityClient } from "sanity:client";
+
+const config = sanityClient.config();
+---
+
+<pre>{JSON.stringify(config, null, 2)}</pre>

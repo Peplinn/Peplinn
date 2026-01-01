@@ -56,15 +56,12 @@ export default defineConfig({
   },
 
   integrations: [// astro-pure will automatically add sitemap, mdx & unocss
-  // sitemap(),
-  // mdx(),
-  // (await import('@playform/compress')).default({
-  //   SVG: false,
-  //   Exclude: ['index.*.js']
-  // }),
-  // Temporary fix vercel adapter
-  // static build method is not needed
-  AstroPureIntegration(config), sanity()],
+    sanity({
+        projectId: "yry247aj",
+        dataset: "production",
+        useCdn: false, // for static builds
+      }),
+    AstroPureIntegration(config)],
   // root: './my-project-directory',
 
   // Prefetch Options
