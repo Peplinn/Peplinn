@@ -1,0 +1,56 @@
+---
+import PageLayout from '@/layouts/BaseLayout.astro'
+import { sanityClient } from 'sanity:client'
+import { urlFor } from '../../lib/sanityImage'
+
+
+const POSTS_QUERY = `
+*[_type == "blogPost" && defined(slug.current)]
+| order(publishedAt desc) {
+  _id,
+  title,
+  description,
+  slug,
+  publishedAt,
+  heroImage
+}
+`
+
+const posts = await sanityClient.fetch(POSTS_QUERY)
+
+const meta = {
+  title: 'Blog',
+  description: 'Some posts or archives of my blog'
+}
+---
+
+<PageLayout {meta}>
+  <main class="mt-6 lg:mt-10">
+    <h1 class="mb-6 text-3xl font-medium">Blog</h1>
+
+    {posts.length === 0 ? (
+      <p>No posts yet.</p>
+    ) : (
+      <ul class="grid gap-6">
+        {posts.map(post => (
+          <li class="rounded-xl overflow-hidden border">
+            <a href={`/blog/${post.slug.current}`} class="block">
+              {post.heroImage && (
+                <div
+                  class="h-48 bg-cover bg-center"
+                  style={`background-image: url(${urlFor(post.heroImage).width(1200).height(600).url()})`}
+                />
+              )}
+              <div class="p-4">
+                <h2 class="text-xl font-semibold">{post.title}</h2>
+                {post.description && (
+                  <p class="mt-2 text-muted-foreground">{post.description}</p>
+                )}
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+</PageLayout>

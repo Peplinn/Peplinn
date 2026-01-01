@@ -1,0 +1,58 @@
+---
+import PageLayout from '@/layouts/ContentLayout.astro'
+import { sanityClient } from 'sanity:client'
+import { PortableText } from 'astro-portabletext'
+import { urlFor } from '../../lib/sanityImage'
+
+export const prerender = true
+
+export async function getStaticPaths() {
+  return sanityClient.fetch(`
+    *[_type == "blogPost" && defined(slug.current)]{
+      "params": { "slug": slug.current }
+    }
+  `)
+}
+
+const POST_QUERY = `
+*[_type == "blogPost" && slug.current == $slug][0]{
+  title,
+  description,
+  publishedAt,
+  heroImage,
+  body
+}
+`
+
+const post = await sanityClient.fetch(POST_QUERY, Astro.params)
+
+if (!post) {
+  throw new Error('Post not found')
+}
+
+const heroUrl = post.heroImage
+  ? urlFor(post.heroImage).width(1600).height(800).url()
+  : null
+---
+
+<PageLayout
+  meta={{
+    title: post.title,
+    description: post.description
+  }}
+  back="/blog"
+>
+  <article class="prose max-w-none">
+    <h1>{post.title}</h1>
+
+    {heroUrl && (
+      <img
+        src={heroUrl}
+        alt={post.title}
+        class="rounded-xl my-6"
+      />
+    )}
+
+    <PortableText value={post.body} />
+  </article>
+</PageLayout>
