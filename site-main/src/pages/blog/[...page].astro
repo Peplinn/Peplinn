@@ -15,18 +15,13 @@ import { getSanityPosts } from '../../lib/sanity'
 export const prerender = true
 
 export const getStaticPaths = (async ({ paginate }) => {
-  // 1. Fetch from Sanity (already sorted by date in the GROQ query)
   const collections = await getSanityPosts()
 
-  // 2. Calculate Unique Tags manually
   const allTags = collections.flatMap((post: any) => post.data.tags)
   const uniqueTags = [...new Set(allTags)] as string[]
   
   const collectionsCount = collections.length
 
-  // 3. Paginate
-  // We cast 'collections' to any to bypass strict Content Collection type checks
-  // provided our mapping in Step 2 is correct, the UI components won't know the difference.
   return paginate(collections, {
     pageSize: config.content.blogPageSize,
     props: { uniqueTags, collectionsCount }

@@ -1,30 +1,31 @@
 // src/lib/sanity.ts
 import { sanityClient } from 'sanity:client'
-import imageUrlBuilder from "@sanity/image-url";
+import createImageUrlBuilder from "@sanity/image-url"; // Updated import
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
 export function urlFor(source: any) {
   return builder.image(source);
 }
 
-// Helper to extract headings from Portable Text for the Table of Contents
-export function getHeadingsFromPortableText(block: any[]) {
-  if (!block) return [];
-  return block
-    .filter((node) => node.style === "h2" || node.style === "h3")
-    .map((node) => ({
-      depth: parseInt(node.style.replace("h", "")),
-      slug: node.children[0].text
+export function getHeadingsFromPortableText(blocks: any[]) {
+  if (!blocks) return [];
+  return blocks
+    .filter((node) => node._type === 'block' && (node.style === 'h2' || node.style === 'h3'))
+    .map((node) => {
+      const text = node.children.map((child: any) => child.text).join('');
+      const slug = text
         .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w\-]+/g, ""),
-      text: node.children[0].text,
-    }));
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '');
+      return {
+        depth: parseInt(node.style.replace('h', '')),
+        slug: slug,
+        text: text,
+      };
+    });
 }
 
-// GROQ Query to fetch posts
-// We assume 'baseContentFields' includes 'title', 'slug', 'description', and 'body'
 export async function getSanityPosts() {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
     _id,
@@ -33,28 +34,53 @@ export async function getSanityPosts() {
     description,
     "slug": slug.current,
     tags,
-    heroImage,
+    heroImage {
+      ...,
+      asset-> {
+        _id,
+        metadata {
+          dimensions
+        }
+      }
+    },
     body
   }`;
 
   const posts = await sanityClient.fetch(query);
 
-  // Map Sanity data to the structure Astro Content Collections expects
-  return posts.map((post: any) => ({
-    id: post.slug,
-    slug: post.slug,
-    body: post.body, // This is Portable Text, not a string
-    collection: "blog",
-    data: {
-      title: post.title,
-      description: post.description,
-      publishDate: new Date(post.publishedAt),
-      tags: post.tags || [],
-      // Handle image: assuming your theme expects an object or string
-      coverImage: post.heroImage ? {
-         src: urlFor(post.heroImage).width(1200).url(),
-         alt: post.heroImage.alt || post.title
-      } : undefined,
-    },
-  }));
+  return posts.map((post: any) => {
+    // 1. Get dimensions
+    const dimensions = post.heroImage?.asset?.metadata?.dimensions;
+    
+    // 2. Check if the image asset actually exists before trying to use urlFor
+    const hasImage = post.heroImage && post.heroImage.asset;
+
+    return {
+      id: post.slug,
+      slug: post.slug,
+      body: post.body,
+      collection: "blog",
+      data: {
+        title: post.title,
+        description: post.description,
+        publishDate: new Date(post.publishedAt),
+        tags: post.tags || [],
+        // 3. Only run urlFor if we actually have an image asset
+        coverImage: hasImage ? {
+           src: urlFor(post.heroImage).width(1200).url(),
+           alt: post.heroImage.alt || post.title,
+           color: post.heroImage.color,
+           width: dimensions?.width || 1200,
+           height: dimensions?.height || 800,
+        } : undefined,
+        heroImage: hasImage ? {
+           src: urlFor(post.heroImage).width(1200).url(),
+           alt: post.heroImage.alt || post.title,
+           color: post.heroImage.color,
+           width: dimensions?.width || 1200,
+           height: dimensions?.height || 800
+        } : undefined,
+      },
+    };
+  });
 }

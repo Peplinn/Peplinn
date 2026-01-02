@@ -1,11 +1,8 @@
 ---
-// src/pages/blog/[...id].astro
-import type { CollectionEntry } from 'astro:content'
 import PostLayout from '@/layouts/BlogPost.astro'
 
-// 1. Import PortableText and our helpers
 import { PortableText } from 'astro-portabletext'
-import { getSanityPosts, getHeadingsFromPortableText } from '../../lib/sanity'
+import { getSanityPosts, getHeadingsFromPortableText, urlFor } from '../../lib/sanity'
 
 export const prerender = true
 
@@ -13,13 +10,11 @@ export async function getStaticPaths() {
   const posts = await getSanityPosts()
   
   return posts.map((post: any) => ({
-    // Use the slug for the URL param
     params: { id: post.slug }, 
     props: { post, posts }
   }))
 }
 
-// We loosen the type definition here because we are passing a "Fake" CollectionEntry
 type Props = {
   post: any
   posts: any[]
@@ -27,15 +22,20 @@ type Props = {
 
 const { post, posts } = Astro.props
 
-// 2. Prepare data for the Layout
-// Sanity stores body as an array (Portable Text), not a string.
-// We calculate headings manually for the Table of Contents.
 const headings = getHeadingsFromPortableText(post.body)
 
-// Remark plugins don't run on Sanity data, so we pass an empty object
-const remarkPluginFrontmatter = {}
+const portableTextComponents = {
+  type: {
+    image: ({ value }: any) => {
+      const imgUrl = urlFor(value).width(800).url();
+      return `<img src="${imgUrl}" alt="${value.alt || ''}" class="rounded-xl my-8 mx-auto shadow-sm" loading="lazy" />`;
+    }
+  }
+};
 ---
 
-<PostLayout {post} {posts} {headings} {remarkPluginFrontmatter}>
-  <PortableText value={post.body} />
+<PostLayout {post} {posts} {headings} remarkPluginFrontmatter={{}}>
+  <article class="prose prose-pure dark:prose-invert max-w-none transition-all">
+    <PortableText value={post.body} components={portableTextComponents} />
+  </article>
 </PostLayout>
