@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets'
-import { render, type CollectionEntry, type CollectionKey } from 'astro:content'
+import type { CollectionEntry, CollectionKey } from 'astro:content'
 import type { HTMLTag, Polymorphic } from 'astro/types'
 
 import { cn } from '../../utils'
@@ -16,7 +16,7 @@ const { as: Tag = 'div', post, detailed = false, class: className } = Astro.prop
 
 const { id, data } = post
 
-const { remarkPluginFrontmatter } = await render(post)
+const minutesRead = data.minutesRead || "unknown read";
 const postDate = data.updatedDate ?? data.publishDate
 ---
 
@@ -98,7 +98,7 @@ const postDate = data.updatedDate ?? data.publishDate
               {/* reading time */}
               <span class='flex items-center gap-1'>
                 <Icon name='time' class='size-4' />
-                {remarkPluginFrontmatter.minutesRead}
+                {minutesRead}
               </span>
               {/* language */}
               {data.language && (

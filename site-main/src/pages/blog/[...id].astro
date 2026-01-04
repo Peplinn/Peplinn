@@ -1,41 +1,73 @@
 ---
 import PostLayout from '@/layouts/BlogPost.astro'
+import { getSanityPosts } from '../../lib/sanity'
+import { Marked } from 'marked'
+import markedKatex from 'marked-katex-extension'
+import markedShiki from 'marked-shiki'
+import { createHighlighter } from 'shiki'
 
-import { PortableText } from 'astro-portabletext'
-import { getSanityPosts, getHeadingsFromPortableText, urlFor } from '../../lib/sanity'
+import { gfmHeadingId } from 'marked-gfm-heading-id'
+import markedFootnote from 'marked-footnote'
+import GithubSlugger from 'github-slugger'
 
 export const prerender = true
 
 export async function getStaticPaths() {
   const posts = await getSanityPosts()
-  
   return posts.map((post: any) => ({
     params: { id: post.slug }, 
     props: { post, posts }
   }))
 }
 
-type Props = {
-  post: any
-  posts: any[]
-}
-
 const { post, posts } = Astro.props
 
-const headings = getHeadingsFromPortableText(post.body)
+const slugger = new GithubSlugger()
 
-const portableTextComponents = {
-  type: {
-    image: ({ value }: any) => {
-      const imgUrl = urlFor(value).width(800).url();
-      return `<img src="${imgUrl}" alt="${value.alt || ''}" class="rounded-xl my-8 mx-auto shadow-sm" loading="lazy" />`;
-    }
-  }
-};
+// --- 1. SETUP MARKED WITH PLUGINS ---
+const highlighter = await createHighlighter({
+  themes: ['github-dark', 'github-light'],
+  langs: ['js', 'ts', 'markdown', 'html', 'css', 'python', 'bash', 'json'] // Add what you need
+})
+
+const marked = new Marked(
+  markedShiki({
+    highlighter,
+    theme: 'github-dark',
+    // This container class helps with styling
+    container: '<pre class="astro-code" style="background-color:#24292e; overflow-x: auto;"><code>' 
+  }),
+  markedKatex({ throwOnError: false }),
+  gfmHeadingId(), // Adds id="heading-slug" to HTML tags
+  markedFootnote() // Turns [^1] into links
+)
+
+const htmlContent = await marked.parse(post.body || '')
+
+// --- 2. EXTRACT HEADINGS MANUALLY ---
+// This regex finds lines starting with ## or ### and creates a TOC array
+const extractSlugger = new GithubSlugger()
+function extractHeadings(markdown: string) {
+  const headingLines = markdown.match(/^###?\s+(.*)/gm) || []
+  return headingLines.map((line) => {
+    const depth = line.split(' ')[0].length
+    const text = line.replace(/^###?\s+/, '')
+    const slug = extractSlugger.slug(text) // Generates strict IDs
+    return { depth, text, slug }
+  })
+}
+
+const headings = extractHeadings(post.body || '')
 ---
 
-<PostLayout {post} {posts} {headings} remarkPluginFrontmatter={{}}>
-  <article class="prose prose-pure dark:prose-invert max-w-none transition-all">
-    <PortableText value={post.body} components={portableTextComponents} />
+<PostLayout 
+  {post} 
+  {posts} 
+  {headings} 
+  {/* Pass minutesRead here so the individual page sees it */}
+  remarkPluginFrontmatter={{ minutesRead: post.data.minutesRead }} 
+>
+  <article class="prose prose-pure dark:prose-invert max-w-none">
+    <div set:html={htmlContent} />
   </article>
 </PostLayout>

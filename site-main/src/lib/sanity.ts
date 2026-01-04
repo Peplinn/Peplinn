@@ -1,6 +1,7 @@
 // src/lib/sanity.ts
 import { sanityClient } from 'sanity:client'
 import createImageUrlBuilder from "@sanity/image-url"; // Updated import
+import { getReadingTime } from 'packages/pure/utils';
 
 const builder = createImageUrlBuilder(sanityClient);
 
@@ -43,29 +44,29 @@ export async function getSanityPosts() {
         }
       }
     },
-    body
+    content
   }`;
 
   const posts = await sanityClient.fetch(query);
 
   return posts.map((post: any) => {
-    // 1. Get dimensions
     const dimensions = post.heroImage?.asset?.metadata?.dimensions;
-    
-    // 2. Check if the image asset actually exists before trying to use urlFor
+
     const hasImage = post.heroImage && post.heroImage.asset;
+
+    const readStats = getReadingTime(post.body || '')
 
     return {
       id: post.slug,
       slug: post.slug,
-      body: post.body,
+      body: post.content,
       collection: "blog",
       data: {
         title: post.title,
         description: post.description,
         publishDate: new Date(post.publishedAt),
         tags: post.tags || [],
-        // 3. Only run urlFor if we actually have an image asset
+        minutesRead: readStats.text,
         coverImage: hasImage ? {
            src: urlFor(post.heroImage).width(1200).url(),
            alt: post.heroImage.alt || post.title,
