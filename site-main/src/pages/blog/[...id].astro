@@ -1,13 +1,16 @@
 ---
 import PostLayout from '@/layouts/BlogPost.astro'
 import { getSanityPosts } from '../../lib/sanity'
-import { Marked } from 'marked'
+import { marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
-import markedShiki from 'marked-shiki'
-import { createHighlighter } from 'shiki'
-
-import { gfmHeadingId } from 'marked-gfm-heading-id'
 import markedFootnote from 'marked-footnote'
+import { gfmHeadingId } from 'marked-gfm-heading-id'
+import { createHighlighter } from 'shiki'
+import { 
+  transformerNotationDiff, 
+  transformerNotationHighlight, 
+  transformerNotationWordHighlight 
+} from '@shikijs/transformers'
 import GithubSlugger from 'github-slugger'
 
 export const prerender = true
@@ -22,39 +25,80 @@ export async function getStaticPaths() {
 
 const { post, posts } = Astro.props
 
-const slugger = new GithubSlugger()
-
-// --- 1. SETUP MARKED WITH PLUGINS ---
+// --- 1. SETUP SHIKI ---
 const highlighter = await createHighlighter({
   themes: ['github-dark', 'github-light'],
-  langs: ['js', 'ts', 'markdown', 'html', 'css', 'python', 'bash', 'json'] // Add what you need
+  langs: ['js', 'ts', 'markdown', 'html', 'css', 'python', 'bash', 'json', 'astro', 'diff', 'shell']
 })
 
-const marked = new Marked(
-  markedShiki({
-    highlighter,
-    theme: 'github-dark',
-    // This container class helps with styling
-    container: '<pre class="astro-code" style="background-color:#24292e; overflow-x: auto;"><code>' 
-  }),
-  markedKatex({ throwOnError: false }),
-  gfmHeadingId(), // Adds id="heading-slug" to HTML tags
-  markedFootnote() // Turns [^1] into links
-)
+const renderer = {
+  // We destructure the first argument to handle both string or object inputs
+  code(codeOrObject, lang) {
+    // If marked passes an object, extract the text. Otherwise use the string.
+    const code = typeof codeOrObject === 'object' ? codeOrObject.text : codeOrObject;
+    const language = (typeof codeOrObject === 'object' ? codeOrObject.lang : lang) || 'plaintext';
+    
+    // Ensure we are passing a string to Shiki
+    const safeCode = code || '';
 
-const htmlContent = await marked.parse(post.body || '')
+    const html = highlighter.codeToHtml(safeCode, {
+      lang: language,
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark'
+      },
+      transformers: [
+        transformerNotationDiff(),
+        transformerNotationHighlight(),
+        transformerNotationWordHighlight(),
+        {
+          name: 'add-line-classes',
+          code(root) {
+            const pre = root.children.find(child => child.type === 'element' && child.tagName === 'pre');
+            if (pre && pre.type === 'element') {
+              const codeEl = pre.children.find(child => child.type === 'element' && child.tagName === 'code');
+              if (codeEl && codeEl.type === 'element') {
+                codeEl.children.forEach(line => {
+                  if (line.type === 'element' && line.tagName === 'span') {
+                    line.properties.className = line.properties.className || [];
+                    (line.properties.className as string[]).push('line');
+                  }
+                });
+              }
+            }
+          }
+        }
+      ]
+    })
 
-// --- 2. EXTRACT HEADINGS MANUALLY ---
-// This regex finds lines starting with ## or ### and creates a TOC array
-const extractSlugger = new GithubSlugger()
+    return `
+      <figure class="astro-code">
+        ${html}
+        <div class="language">${language.toUpperCase()}</div>
+        <button class="copy"></button>
+      </figure>
+    `
+  }
+}
+
+// --- 2. SETUP MARKED ---
+marked.use({ renderer })
+marked.use(markedKatex({ throwOnError: false }))
+marked.use(gfmHeadingId())
+marked.use(markedFootnote())
+
+const htmlContent = marked.parse(post.body || '')
+
+// --- 3. FIX THE TOC (Using Lexer) ---
 function extractHeadings(markdown: string) {
-  const headingLines = markdown.match(/^###?\s+(.*)/gm) || []
-  return headingLines.map((line) => {
-    const depth = line.split(' ')[0].length
-    const text = line.replace(/^###?\s+/, '')
-    const slug = extractSlugger.slug(text) // Generates strict IDs
-    return { depth, text, slug }
-  })
+  const slugger = new GithubSlugger()
+  return marked.lexer(markdown)
+    .filter((token) => token.type === 'heading')
+    .map((token: any) => ({
+      depth: token.depth,
+      text: token.text,
+      slug: slugger.slug(token.text)
+    }))
 }
 
 const headings = extractHeadings(post.body || '')
@@ -64,8 +108,7 @@ const headings = extractHeadings(post.body || '')
   {post} 
   {posts} 
   {headings} 
-  {/* Pass minutesRead here so the individual page sees it */}
-  remarkPluginFrontmatter={{ minutesRead: post.data.minutesRead }} 
+  remarkPluginFrontmatter={{ minutesRead: post.data.minutesRead }}
 >
   <article class="prose prose-pure dark:prose-invert max-w-none">
     <div set:html={htmlContent} />

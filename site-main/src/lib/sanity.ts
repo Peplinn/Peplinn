@@ -54,12 +54,15 @@ export async function getSanityPosts() {
 
     const hasImage = post.heroImage && post.heroImage.asset;
 
-    const readStats = getReadingTime(post.body || '')
+    const rawMarkdown = post.content || post.body || ""; 
+
+    // 2. Calculate time on the raw string
+    const readStats = getReadingTime(rawMarkdown);
 
     return {
       id: post.slug,
       slug: post.slug,
-      body: post.content,
+      body: rawMarkdown,
       collection: "blog",
       data: {
         title: post.title,
