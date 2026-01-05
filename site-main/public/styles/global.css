@@ -57,6 +57,12 @@ span.katex-display {
   border-radius: 0.5rem;
   background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
 
+  & pre span {
+    color: var(--shiki-light);
+  }
+
+  color: var(--shiki-light) !important;
+
   /* Code container */
   & pre {
     margin: 0;
@@ -202,6 +208,7 @@ span.katex-display {
   }
 }
 .dark {
+  .astro-code,
   .astro-code pre span {
     color: var(--shiki-dark) !important;
   }
