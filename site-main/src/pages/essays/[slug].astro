@@ -1,11 +1,18 @@
 ---
 import { sanityClient } from "sanity:client";
-import { PortableText } from "astro-portabletext";
+// 1. Change this import
+import { marked } from 'marked'; 
 import PageLayout from '@/layouts/ContentLayout.astro';
 import DocsContents from './DocsContents.astro';
 
+export const prerender = true;
+
 const QUERY = `*[_type == "essay" && slug.current == $slug][0]`;
 const essay = await sanityClient.fetch(QUERY, Astro.params);
+
+// 2. Parse the markdown content
+// If you want KaTeX/Shiki here, add marked.use() calls similar to your blog file
+const htmlContent = essay?.content ? marked.parse(essay.content) : null;
 
 export async function getStaticPaths() {
   return sanityClient.fetch(`
@@ -33,9 +40,9 @@ const essays = await sanityClient.fetch(`*[_type == "essay" && defined(slug.curr
     )}
   </Fragment>
 
-  <main class="prose mt-6 lg:mt-10">
-    {Array.isArray(essay.content) ? (
-      <PortableText value={essay.content} />
+  <main class="prose dark:prose-invert mt-6 lg:mt-10">
+    {htmlContent ? (
+      <div set:html={htmlContent} />
     ) : (
       <p>No content available.</p>
     )}
