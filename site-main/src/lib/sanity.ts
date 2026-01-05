@@ -27,7 +27,36 @@ export function getHeadingsFromPortableText(blocks: any[]) {
     });
 }
 
-export async function getSanityPosts() {
+export type SanityBlogPost = {
+  id: string
+  slug: string
+  body: string
+  collection: 'blog'
+  data: {
+    title: string
+    description?: string
+    publishDate: Date
+    tags: string[]
+    minutesRead: string
+    coverImage?: {
+      src: string
+      alt: string
+      color?: string
+      width: number
+      height: number
+    }
+    heroImage?: {
+      src: string
+      alt: string
+      color?: string
+      width: number
+      height: number
+    }
+  }
+}
+
+
+export async function getSanityPosts(): Promise<SanityBlogPost[]> {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
     _id,
     publishedAt,

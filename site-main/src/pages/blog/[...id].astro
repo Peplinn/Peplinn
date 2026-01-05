@@ -1,7 +1,9 @@
 ---
 import PostLayout from '@/layouts/BlogPost.astro'
+import { SanityBlogPost } from '../../lib/sanity'
 import { getSanityPosts } from '../../lib/sanity'
 import { marked } from 'marked'
+import type { Tokens } from 'marked'
 import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import { gfmHeadingId } from 'marked-gfm-heading-id'
@@ -17,13 +19,21 @@ export const prerender = true
 
 export async function getStaticPaths() {
   const posts = await getSanityPosts()
-  return posts.map((post: any) => ({
-    params: { id: post.slug }, 
-    props: { post, posts }
+
+  return posts.map((post) => ({
+    params: { id: post.slug },
+    props: {
+      post,
+      posts
+    }
   }))
 }
 
-const { post, posts } = Astro.props
+const { post, posts } = Astro.props as {
+  post: SanityBlogPost
+  posts: SanityBlogPost[]
+}
+
 
 // --- 1. SETUP SHIKI (Standard Themes) ---
 // We load standard themes instead of the problematic 'css-variables'
@@ -33,28 +43,21 @@ const highlighter = await createHighlighter({
 })
 
 const renderer = {
-  code(codeOrObject, lang) {
-    const code = typeof codeOrObject === 'object' ? codeOrObject.text : codeOrObject;
-    const requestedLang =
-      (typeof codeOrObject === 'object'
-        ? codeOrObject.lang
-        : lang) || 'plaintext'
+  code(token: Tokens.Code) {
+    const code = token.text
+    const requestedLang = token.lang || 'plaintext'
 
     const language = highlighter.getLoadedLanguages().includes(requestedLang)
       ? requestedLang
       : 'plaintext'
-    
+
     const html = highlighter.codeToHtml(code, {
       lang: language,
-      // DUAL THEMES + DEFAULT COLOR FALSE
-      // This forces Shiki to output: 
-      // style="--shiki-light: #...; --shiki-dark: #...; color: var(--shiki-light)"
       themes: {
         light: 'github-light',
         dark: 'github-dark'
       },
-      defaultColor: false, 
-      
+      defaultColor: false,
       transformers: [
         transformerNotationDiff(),
         transformerNotationHighlight(),
@@ -62,19 +65,23 @@ const renderer = {
         {
           name: 'add-line-classes',
           code(root) {
-            const pre = root.children.find(child => child.type === 'element' && child.tagName === 'pre');
-            if (pre && pre.type === 'element') {
-              // Ensure transparency so your global.css background works
-              pre.properties.style = "background-color: transparent !important;";
-              
-              const codeEl = pre.children.find(child => child.type === 'element' && child.tagName === 'code');
-              if (codeEl && codeEl.type === 'element') {
+            const pre = root.children.find(
+              c => c.type === 'element' && c.tagName === 'pre'
+            )
+            if (pre?.type === 'element') {
+              pre.properties.style = 'background-color: transparent !important;'
+
+              const codeEl = pre.children.find(
+                c => c.type === 'element' && c.tagName === 'code'
+              )
+
+              if (codeEl?.type === 'element') {
                 codeEl.children.forEach(line => {
                   if (line.type === 'element' && line.tagName === 'span') {
-                    line.properties.className = line.properties.className || [];
-                    (line.properties.className as string[]).push('line');
+                    line.properties.className ||= []
+                    ;(line.properties.className as string[]).push('line')
                   }
-                });
+                })
               }
             }
           }
@@ -82,25 +89,21 @@ const renderer = {
       ]
     })
 
-    // Wrapper with Language Label moved to 'right-12'
     return `
       <figure class="astro-code relative group">
         ${html}
-        <div class="language absolute text-sm text-foreground px-3 py-1 top-2 right-16 text-s opacity-50 group-hover:opacity-0 transition-opacity uppercase">
-          ${language.toLowerCase()}
+        <div class="language absolute text-sm text-foreground px-3 py-1 top-2 right-16 opacity-50 group-hover:opacity-0 transition-opacity uppercase">
+          ${language}
         </div>
         <button class="copy absolute top-2 right-2 p-1 rounded border border-border bg-muted hover:bg-primary/10 transition-all" title="Copy code">
-          <span class="ready">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-          </span>
-          <span class="success hidden">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4 stroke-green-500"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
+          <span class="ready">…</span>
+          <span class="success hidden">…</span>
         </button>
       </figure>
     `
   }
 }
+
 
 // --- 2. SETUP MARKED ---
 marked.use({ renderer })
