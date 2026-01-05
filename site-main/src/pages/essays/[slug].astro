@@ -1,7 +1,7 @@
 ---
 import { sanityClient } from "sanity:client";
 // 1. Change this import
-import { marked } from 'marked'; 
+import { renderMarkdown } from '../../lib/markdown'
 import PageLayout from '@/layouts/ContentLayout.astro';
 import DocsContents from './DocsContents.astro';
 
@@ -12,7 +12,10 @@ const essay = await sanityClient.fetch(QUERY, Astro.params);
 
 // 2. Parse the markdown content
 // If you want KaTeX/Shiki here, add marked.use() calls similar to your blog file
-const htmlContent = essay?.content ? marked.parse(essay.content) : null;
+const htmlContent = essay?.content
+  ? await renderMarkdown(essay.content)
+  : null
+
 
 export async function getStaticPaths() {
   return sanityClient.fetch(`

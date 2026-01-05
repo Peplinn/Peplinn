@@ -35,7 +35,14 @@ const highlighter = await createHighlighter({
 const renderer = {
   code(codeOrObject, lang) {
     const code = typeof codeOrObject === 'object' ? codeOrObject.text : codeOrObject;
-    const language = (typeof codeOrObject === 'object' ? codeOrObject.lang : lang) || 'plaintext';
+    const requestedLang =
+      (typeof codeOrObject === 'object'
+        ? codeOrObject.lang
+        : lang) || 'plaintext'
+
+    const language = highlighter.getLoadedLanguages().includes(requestedLang)
+      ? requestedLang
+      : 'plaintext'
     
     const html = highlighter.codeToHtml(code, {
       lang: language,
