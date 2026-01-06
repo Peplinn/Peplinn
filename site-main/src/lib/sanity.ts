@@ -1,62 +1,88 @@
 // src/lib/sanity.ts
 import { sanityClient } from 'sanity:client'
-import createImageUrlBuilder from "@sanity/image-url"; // Updated import
-import { getReadingTime } from 'packages/pure/utils';
+import createImageUrlBuilder from "@sanity/image-url"
+import { getReadingTime } from 'packages/pure/utils'
 
-const builder = createImageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient)
 
 export function urlFor(source: any) {
-  return builder.image(source);
+  return builder.image(source)
 }
 
 export function getHeadingsFromPortableText(blocks: any[]) {
-  if (!blocks) return [];
+  if (!blocks) return []
   return blocks
     .filter((node) => node._type === 'block' && (node.style === 'h2' || node.style === 'h3'))
     .map((node) => {
-      const text = node.children.map((child: any) => child.text).join('');
+      const text = node.children.map((child: any) => child.text).join('')
       const slug = text
         .toLowerCase()
         .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '');
+        .replace(/[^\w\-]+/g, '')
       return {
         depth: parseInt(node.style.replace('h', '')),
         slug: slug,
         text: text,
-      };
-    });
+      }
+    })
 }
 
-export type SanityBlogPost = {
+// Build-safe Astro type
+export type BlogCollectionPost = {
   id: string
   slug: string
   body: string
   collection: 'blog'
   data: {
     title: string
-    description?: string
+    description: string
+    comment: boolean
+    draft: boolean
     publishDate: Date
     tags: string[]
     minutesRead: string
+    updatedDate?: Date
     coverImage?: {
-      src: string
+      src: { src: string; width: number; height: number; format: 'jpg' | 'png' }
       alt: string
       color?: string
-      width: number
-      height: number
+      width?: number
+      height?: number
+      inferSize?: boolean
     }
     heroImage?: {
-      src: string
+      src: { src: string; width: number; height: number; format: 'jpg' | 'png' }
       alt: string
       color?: string
-      width: number
-      height: number
+      width?: number
+      height?: number
+      inferSize?: boolean
     }
   }
 }
 
 
-export async function getSanityPosts(): Promise<SanityBlogPost[]> {
+function astroImage(src: string, width: number, height: number, format: 'jpg' | 'png' = 'jpg') {
+  return { src: { src, width, height, format } }
+}
+
+function mapHeroImage(image: any, fallbackAlt = '') {
+  if (!image) return undefined;
+  return {
+    src: {
+      src: image.src, // original URL
+      width: image.width,
+      height: image.height,
+      format: 'jpg' // or whatever format it is
+    },
+    alt: image.alt ?? fallbackAlt,
+    width: image.width,
+    height: image.height,
+    color: image.color,
+  }
+}
+
+export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
     _id,
     publishedAt,
@@ -68,52 +94,53 @@ export async function getSanityPosts(): Promise<SanityBlogPost[]> {
       ...,
       asset-> {
         _id,
-        metadata {
-          dimensions
-        }
+        metadata { dimensions }
       }
     },
     content
-  }`;
+  }`
 
-  const posts = await sanityClient.fetch(query);
+  const posts = await sanityClient.fetch(query)
 
   return posts.map((post: any) => {
-    const dimensions = post.heroImage?.asset?.metadata?.dimensions;
+    const dimensions = post.heroImage?.asset?.metadata?.dimensions || { width: 1200, height: 800 }
+    const hasImage = post.heroImage && post.heroImage.asset
+    const rawMarkdown = post.content || post.body || ""
+    const readStats = getReadingTime(rawMarkdown)
 
-    const hasImage = post.heroImage && post.heroImage.asset;
+    const heroImage = hasImage
+      ? {
+          src: astroImage(
+            urlFor(post.heroImage).width(1200).url(),
+            dimensions?.width || 1200,
+            dimensions?.height || 800,
+            'jpg'
+          ).src,
+          alt: post.heroImage.alt || post.title,
+          color: post.heroImage.color,
+          width: dimensions?.width || 1200,
+          height: dimensions?.height || 800
+        }
+      : undefined
 
-    const rawMarkdown = post.content || post.body || ""; 
-
-    // 2. Calculate time on the raw string
-    const readStats = getReadingTime(rawMarkdown);
+    const coverImage = heroImage // reuse same
 
     return {
       id: post.slug,
       slug: post.slug,
       body: rawMarkdown,
-      collection: "blog",
+      collection: 'blog',
       data: {
         title: post.title,
-        description: post.description,
+        description: post.description || '',
+        comment: false,
+        draft: false,
         publishDate: new Date(post.publishedAt),
         tags: post.tags || [],
         minutesRead: readStats.text,
-        coverImage: hasImage ? {
-           src: urlFor(post.heroImage).width(1200).url(),
-           alt: post.heroImage.alt || post.title,
-           color: post.heroImage.color,
-           width: dimensions?.width || 1200,
-           height: dimensions?.height || 800,
-        } : undefined,
-        heroImage: hasImage ? {
-           src: urlFor(post.heroImage).width(1200).url(),
-           alt: post.heroImage.alt || post.title,
-           color: post.heroImage.color,
-           width: dimensions?.width || 1200,
-           height: dimensions?.height || 800
-        } : undefined,
-      },
-    };
-  });
+        heroImage: mapHeroImage(post.heroImage ?? "Blog image"),
+        coverImage: mapHeroImage(post.coverImage ?? "Blog image")
+      }
+    }
+  })
 }

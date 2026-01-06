@@ -1,9 +1,9 @@
 ---
 import type { GetStaticPaths, Page } from 'astro'
-import type { CollectionEntry } from 'astro:content'
+import type { BlogCollectionPost } from '../../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
-import { getUniqueTags, sortMDByDate } from 'astro-pure/server'
+import { getSanityTags } from '../../../lib/sanity-helpers'
 import { getSanityPosts } from '../../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
@@ -13,8 +13,12 @@ export const prerender = true
 
 export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
   const allPosts = await getSanityPosts()
-  const allPostsByDate = sortMDByDate(allPosts)
-  const uniqueTags = getUniqueTags(allPostsByDate)
+  const allPostsByDate = [...allPosts].sort(
+    (a, b) =>
+      new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
+      new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
+  )
+  const uniqueTags = getSanityTags(allPostsByDate)
 
   return uniqueTags.flatMap((tag) => {
     const filterPosts = allPostsByDate.filter((post) => post.data.tags.includes(tag))
@@ -26,7 +30,7 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
 }
 
 interface Props {
-  page: Page<CollectionEntry<'blog'>>
+  page: Page<BlogCollectionPost>
 }
 
 const { page } = Astro.props

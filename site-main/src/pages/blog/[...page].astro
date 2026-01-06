@@ -1,8 +1,7 @@
 ---
 // src/pages/blog/[...page].astro
 import type { GetStaticPaths, Page } from 'astro'
-// We keep CollectionEntry for type safety, even though we are faking it
-import type { CollectionEntry } from 'astro:content'
+import type { BlogCollectionPost } from '../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { Button, Icon } from 'astro-pure/user'
@@ -29,7 +28,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths
 
 interface Props {
-  page: Page<CollectionEntry<'blog'>>
+  page: Page<BlogCollectionPost>
   uniqueTags: string[]
   collectionsCount: number
 }

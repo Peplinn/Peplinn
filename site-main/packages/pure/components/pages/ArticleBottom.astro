@@ -1,13 +1,19 @@
 ---
-import type { CollectionEntry, CollectionKey } from 'astro:content'
-
 import { cn } from '../../utils'
+
+type MinimalPost = {
+  id: string
+  data: {
+    title: string
+  }
+}
 
 type Props = {
   id: string
-  collections: CollectionEntry<CollectionKey>[]
+  collections: MinimalPost[]
   class?: string
 }
+
 
 // Get the requested entry
 const { id, collections, class: className } = Astro.props

@@ -2,10 +2,11 @@
 import PageLayout from '@/layouts/BaseLayout.astro';
 import { sanityClient } from "sanity:client";
 import DocsContents from './DocsContents.astro';
+import { Button, Icon } from 'astro-pure/user'
 
 const ESSAYS_QUERY = `*[_type == "essay" && defined(slug.current)]{
   _id, title, slug, category, order
-}`;
+} | order(order asc)`; // Added ordering so they show in your preferred order
 
 const essays = await sanityClient.fetch(ESSAYS_QUERY);
 
@@ -16,8 +17,23 @@ const meta = {
 ---
 
 <PageLayout {meta}>
+  <Button title='Back' href='/' variant='back' />
+  
   <main class='mt-6 lg:mt-10'>
-    <h1 class='mb-6 text-3xl font-medium'>Essays</h1>
-    <DocsContents essays={essays} />
+    <div id='content-header' class='animate'>
+      <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Essays</h1>
+    </div>
+
+    {
+      essays.length === 0 ? (
+        <div class="animate">
+          <p class="text-muted-foreground">No essays yet. Check back soon!</p>
+        </div>
+      ) : (
+        <div class="animate" id="content">
+          <DocsContents essays={essays} />
+        </div>
+      )
+    }
   </main>
 </PageLayout>

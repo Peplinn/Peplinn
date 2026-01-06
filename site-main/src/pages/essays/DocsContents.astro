@@ -39,9 +39,12 @@ const sortedCategories = Object.entries(essaysByCategory).sort(([a], [b]) =>
 )
 
 type Props = {
+  essays: any[]
   title?: boolean
   class?: string
 }
+
+
 
 const { title = true, class: className, ...props } = Astro.props
 ---
