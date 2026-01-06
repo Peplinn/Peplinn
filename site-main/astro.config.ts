@@ -27,7 +27,7 @@ import sanity from '@sanity/astro';
 // https://astro.build/config
 export default defineConfig({
 
-  site: 'https://astro-pure.js.org',
+  site: 'https://ebubeoluoma.com',
 
   trailingSlash: 'never',
 
