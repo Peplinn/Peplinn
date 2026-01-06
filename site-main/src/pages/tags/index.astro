@@ -1,11 +1,12 @@
 ---
-import { getBlogCollection, getUniqueTagsWithCount } from 'astro-pure/server'
+import { getSanityTagsWithCount } from '../../lib/sanity-helpers'
+import { getSanityPosts } from '../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import { cn } from 'astro-pure/utils'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
-const allPosts = await getBlogCollection()
-const allTags = getUniqueTagsWithCount(allPosts)
+const allPosts = await getSanityPosts()
+const allTags = getSanityTagsWithCount(allPosts)
 
 const meta = {
   description: "A list of all the topics I've written about in my posts",
@@ -24,24 +25,24 @@ const meta = {
       {
         allTags.length > 0 ? (
           <ul class='flex flex-wrap gap-4'>
-            {allTags.map(([tag, val]) => (
+            {allTags.map(({ tag, count }) => (
               <li>
                 <Button
                   href={`/tags/${tag}`}
                   variant='pill'
                   class={cn(
                     'items-start gap-x-1',
-                    val > 2 ? 'rounded-xl px-3 py-1 text-xl' : val > 1 && 'text-lg'
+                    count > 2 ? 'rounded-xl px-3 py-1 text-xl' : count > 1 && 'text-lg'
                   )}
                 >
                   {tag}
-                  <span class={val > 2 ? 'text-base' : 'text-xs'}>{val}</span>
+                  <span class={count > 2 ? 'text-base' : 'text-xs'}>{count}</span>
                 </Button>
               </li>
             ))}
           </ul>
         ) : (
-          <p>Any tag yet.</p>
+          <p>No tags yet.</p>
         )
       }
     </div>

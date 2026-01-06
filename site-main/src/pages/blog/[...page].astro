@@ -1,19 +1,26 @@
 ---
+// src/pages/blog/[...page].astro
 import type { GetStaticPaths, Page } from 'astro'
-import type { CollectionEntry } from 'astro:content'
+import type { BlogCollectionPost } from '../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
-import { getBlogCollection, getUniqueTags, sortMDByDate } from 'astro-pure/server'
 import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import config from '@/site-config'
 
+// Import our new Sanity helper
+import { getSanityPosts } from '../../lib/sanity'
+
 export const prerender = true
 
 export const getStaticPaths = (async ({ paginate }) => {
-  const collections = sortMDByDate(await getBlogCollection())
-  const uniqueTags = getUniqueTags(collections)
+  const collections = await getSanityPosts()
+
+  const allTags = collections.flatMap((post: any) => post.data.tags)
+  const uniqueTags = [...new Set(allTags)] as string[]
+  
   const collectionsCount = collections.length
+
   return paginate(collections, {
     pageSize: config.content.blogPageSize,
     props: { uniqueTags, collectionsCount }
@@ -21,7 +28,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths
 
 interface Props {
-  page: Page<CollectionEntry<'blog'>>
+  page: Page<BlogCollectionPost>
   uniqueTags: string[]
   collectionsCount: number
 }
@@ -73,6 +80,7 @@ const paginationProps = {
             {/* posts */}
             <ul class='flex flex-col gap-y-4 text-start'>
               {page.data.map((post) => (
+                // @ts-ignore - The mapped object shape matches what PostPreview needs
                 <PostPreview {post} detailed />
               ))}
             </ul>

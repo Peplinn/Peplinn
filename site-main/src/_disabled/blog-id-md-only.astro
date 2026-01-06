@@ -2,8 +2,8 @@
 import PostLayout from '@/layouts/BlogPost.astro'
 
 // Type-only import to satisfy `verbatimModuleSyntax`/build
-import type { BlogCollectionPost } from '../../lib/sanity'
-import { getSanityPosts } from '../../lib/sanity'
+import type { BlogCollectionPost } from '../lib/sanity'
+import { getSanityPosts } from '../lib/sanity'
 
 import { marked } from 'marked'
 import type { Tokens } from 'marked'

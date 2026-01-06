@@ -1,10 +1,9 @@
 ---
-import { Button, Collapse, Spoiler, Timeline } from 'astro-pure/user'
+import { Button, Collapse, Spoiler, Timeline, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
 // import Substats from '@/components/about/Substats.astro'
 // import ToolSection from '@/components/about/ToolSection.astro'
 import config from 'virtual:config'
-import { Icon } from '../../../packages/pure/components/user'
 
 const footerConf = config.footer
 let social = footerConf.social || {}
@@ -18,11 +17,11 @@ const headings = [
 <PageLayout title='About' {headings}>
   <p>I am a data scientist and backend engineer based in Ontario, Canada. I'm interested in work that creates meaningful positive impact and drawn to problems that affect people's daily lives.</p>
   <p>
-    Much of my work centers on problems in climate and urbanization, which depend on deliberate human intervention for solution.
+    I focus on climate and urbanization challenges that require deliberate human intervention.
     I'm also experimenting with machine learning models and advanced statistical methods through my projects.
   </p>
   <p>
-    When I'm not working, I spend time learning, writing, making art, and gaming. Unsurprisingly, these often feature in the work that I do.
+    When I'm not working, I spend time learning, writing, making art, and gaming. Unsurprisingly, these often inspire the work that I do.
   </p>
   <p>
     Stay curious.
@@ -47,7 +46,7 @@ const headings = [
 
   {/* now */}
   <h2 id='now'>Now</h2>
-  <p>It's <strong>Christmas Day 2025</strong>. I have just created this section and am reworking this and the home page.</p>
+  <p>It's <strong>Christmas Day 2025</strong>. I have just created this section and am reworking the entire site.</p>
   <p>I have also been drawing again. I want to start working on my shading soon.</p>
 
 
@@ -71,10 +70,5 @@ const headings = [
       CI/CD: <a href='https://vercel.com/workflow' target='_blank'>Vercel Workflow</a>
     </li>
     <!-- <li>Resources speedup: <a href='https://cdn.cbd.int/' target='_blank'>CBD CDN</a></li> -->
-    <li>
-      Other statistics: <a href='https://github.com/spencerwooo/substats' target='_blank'
-        >Substats</a
-      >
-    </li>
   </ul>
 </PageLayout>

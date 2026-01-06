@@ -22,59 +22,44 @@ import {
 } from './src/plugins/shiki-transformers.ts'
 import config from './src/site.config.ts'
 
+import sanity from '@sanity/astro';
+
 // https://astro.build/config
 export default defineConfig({
-  // Top-Level Options
+
   site: 'https://astro-pure.js.org',
-  // Deploy to a sub path; See https://astro-pure.js.org/docs/setup/deployment#platform-with-base-path
-  // base: '/astro-pure/',
+
   trailingSlash: 'never',
 
-  // Adapter
-  // https://docs.astro.build/en/guides/deploy/
-  // 1. Vercel (serverless)
   adapter: vercel({
     webAnalytics: {
       enabled: true, // set to false when using @vercel/analytics@1.4.0
     },
   }),
   output: 'server',
-  // 2. Vercel (static)
-  // adapter: vercelStatic(),
-  // 3. Local (standalone)
-  // adapter: node({ mode: 'standalone' }),
-  // output: 'server',
-  // ---
 
   image: {
     responsiveStyles: true,
     service: {
       entrypoint: 'astro/assets/services/sharp'
-    }
+    },
+    domains: ['cdn.sanity.io']
   },
 
-  integrations: [
-    // astro-pure will automatically add sitemap, mdx & unocss
-    // sitemap(),
-    // mdx(),
-    AstroPureIntegration(config)
-    // (await import('@playform/compress')).default({
-    //   SVG: false,
-    //   Exclude: ['index.*.js']
-    // }),
+  integrations: [// astro-pure will automatically add sitemap, mdx & unocss
+    sanity({
+        projectId: "yry247aj",
+        dataset: "production",
+        useCdn: false, // for static builds
+      }),
+    AstroPureIntegration(config)],
 
-    // Temporary fix vercel adapter
-    // static build method is not needed
-  ],
-  // root: './my-project-directory',
-
-  // Prefetch Options
   prefetch: true,
-  // Server Options
+
   server: {
     host: true
   },
-  // Markdown Options
+
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [

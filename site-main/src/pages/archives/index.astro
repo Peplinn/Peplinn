@@ -1,14 +1,20 @@
 ---
 import { PostPreview } from 'astro-pure/components/pages'
-import { getBlogCollection, groupCollectionsByYear, sortMDByDate } from 'astro-pure/server'
+import { groupSanityPostsByYear } from '../../lib/sanity-helpers'
+import { getSanityPosts, type BlogCollectionPost } from '../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
 export const prerender = true
 
-const allPosts = await getBlogCollection()
-const allPostsByDate = sortMDByDate(allPosts)
-const allPostsByYear = groupCollectionsByYear(allPostsByDate)
+const allPosts = await getSanityPosts()
+const allPostsByDate = [...allPosts].sort(
+  (a, b) =>
+    new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
+    new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
+)
+const allPostsByYear = Object.entries(groupSanityPostsByYear(allPostsByDate))
+
 
 const meta = {
   description: 'A list of all the years of creating my posts',
@@ -40,7 +46,7 @@ const meta = {
               {posts.length} post{posts.length > 1 && 's'}
             </p>
             <ul class='flex flex-col text-start'>
-              {posts.map((p) => (
+              {posts.map((p: BlogCollectionPost) => (
                 <PostPreview post={p} class='border-0 bg-transparent py-2' />
               ))}
             </ul>

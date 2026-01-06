@@ -1,0 +1,112 @@
+---
+import { sanityClient } from "sanity:client"
+import { cn } from "astro-pure/utils"
+
+export const prerender = true
+export const partial = true
+
+type EssayNavItem = {
+  title: string
+  slug: string
+  category: string
+  order?: number
+}
+
+const QUERY = `
+*[_type == "essay" && defined(slug.current)]{
+  title,
+  "slug": slug.current,
+  category,
+  order
+}
+`
+
+const essays = await sanityClient.fetch<EssayNavItem[]>(QUERY)
+
+// group by category
+const essaysByCategory = essays.reduce<Record<string, EssayNavItem[]>>(
+  (acc, essay) => {
+    if (!acc[essay.category]) acc[essay.category] = []
+    acc[essay.category].push(essay)
+    return acc
+  },
+  {}
+)
+
+// sort categories alphabetically
+const sortedCategories = Object.entries(essaysByCategory).sort(([a], [b]) =>
+  a.localeCompare(b)
+)
+
+type Props = {
+  essays: any[]
+  title?: boolean
+  class?: string
+}
+
+
+
+const { title = true, class: className, ...props } = Astro.props
+---
+
+<docs-toc class={cn("not-prose", className)} {...props}>
+
+  <ul class="mt-4 flex flex-col gap-y-5">
+    {
+      sortedCategories.map(([category, items]) => (
+        <li>
+          <h3 class="text-muted-foreground text-xs tracking-widest uppercase">
+            {category}
+          </h3>
+
+          <ul class="mt-2 flex flex-col">
+            {[...items]
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((essay) => (
+                <li class="docs-item flex relative ms-2 px-3 py-1 text-foreground/75 transition-all rounded-2xl">
+                  <a
+                    class="flex-1 hover:text-foreground"
+                    href={`/essays/${essay.slug}`}
+                  >
+                    {essay.title}
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</docs-toc>
+
+<style>
+  docs-toc .docs-item::before {
+    content: '';
+    position: absolute;
+    top: 5%;
+    bottom: 5%;
+    left: -0.5rem;
+    width: 2px;
+    background-color: hsl(var(--input) / var(--un-bg-opacity));
+  }
+
+  docs-toc :global(.docs-item.docs-hl) {
+    background-color: hsl(var(--muted) / var(--un-bg-opacity));
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  class DocsTOC extends HTMLElement {
+    connectedCallback() {
+      const path = window.location.pathname
+      this.querySelectorAll("a").forEach(link => {
+        if (link.getAttribute("href") === path) {
+          link.parentElement?.classList.add("docs-hl")
+        }
+      })
+    }
+  }
+
+  customElements.define("docs-toc", DocsTOC)
+</script>
