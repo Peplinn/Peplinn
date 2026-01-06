@@ -26,27 +26,17 @@ import sanity from '@sanity/astro';
 
 // https://astro.build/config
 export default defineConfig({
-  // Top-Level Options
+
   site: 'https://astro-pure.js.org',
-  // Deploy to a sub path; See https://astro-pure.js.org/docs/setup/deployment#platform-with-base-path
-  // base: '/astro-pure/',
+
   trailingSlash: 'never',
 
-  // Adapter
-  // https://docs.astro.build/en/guides/deploy/
-  // 1. Vercel (serverless)
   adapter: vercel({
     webAnalytics: {
       enabled: true, // set to false when using @vercel/analytics@1.4.0
     },
   }),
   output: 'server',
-  // 2. Vercel (static)
-  // adapter: vercelStatic(),
-  // 3. Local (standalone)
-  // adapter: node({ mode: 'standalone' }),
-  // output: 'server',
-  // ---
 
   image: {
     responsiveStyles: true,
@@ -63,15 +53,13 @@ export default defineConfig({
         useCdn: false, // for static builds
       }),
     AstroPureIntegration(config)],
-  // root: './my-project-directory',
 
-  // Prefetch Options
   prefetch: true,
-  // Server Options
+
   server: {
     host: true
   },
-  // Markdown Options
+
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [

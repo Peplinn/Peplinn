@@ -70,12 +70,13 @@ function mapHeroImage(image: any, fallbackAlt = '') {
   if (!image || !image.src) return undefined; // skip if no image
 
   return {
-    src: {
-      src: image.src,      // must be string URL
-      width: image.width || 1200,
-      height: image.height || 800,
-      format: 'jpg',       // Astro Image format
-    },
+    // src: {
+    //   src: image.src,      // must be string URL
+    //   width: image.width || 1200,
+    //   height: image.height || 800,
+    //   format: 'jpg',       // Astro Image format
+    // },
+    src: typeof image.src === 'string' ? image.src : image.src,
     alt: image.alt ?? fallbackAlt,
     width: image.width || 1200,
     height: image.height || 800,
