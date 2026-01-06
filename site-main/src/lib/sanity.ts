@@ -67,20 +67,22 @@ function astroImage(src: string, width: number, height: number, format: 'jpg' | 
 }
 
 function mapHeroImage(image: any, fallbackAlt = '') {
-  if (!image) return undefined;
+  if (!image || !image.src) return undefined; // skip if no image
+
   return {
     src: {
-      src: image.src, // original URL
-      width: image.width,
-      height: image.height,
-      format: 'jpg' // or whatever format it is
+      src: image.src,      // must be string URL
+      width: image.width || 1200,
+      height: image.height || 800,
+      format: 'jpg',       // Astro Image format
     },
     alt: image.alt ?? fallbackAlt,
-    width: image.width,
-    height: image.height,
+    width: image.width || 1200,
+    height: image.height || 800,
     color: image.color,
   }
 }
+
 
 export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
@@ -138,8 +140,30 @@ export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
         publishDate: new Date(post.publishedAt),
         tags: post.tags || [],
         minutesRead: readStats.text,
-        heroImage: mapHeroImage(post.heroImage ?? "Blog image"),
-        coverImage: mapHeroImage(post.coverImage ?? "Blog image")
+        heroImage: mapHeroImage(
+          post.heroImage
+            ? { 
+                src: urlFor(post.heroImage).width(1200).url(),
+                width: post.heroImage.asset?.metadata?.dimensions?.width,
+                height: post.heroImage.asset?.metadata?.dimensions?.height,
+                alt: post.heroImage.alt || post.title,
+                color: post.heroImage.color
+              }
+            : null,
+          post.title ?? 'Blog image'
+        ),
+        coverImage: mapHeroImage(
+          post.coverImage
+            ? {
+                src: urlFor(post.coverImage).width(1200).url(),
+                width: post.coverImage.asset?.metadata?.dimensions?.width,
+                height: post.coverImage.asset?.metadata?.dimensions?.height,
+                alt: post.coverImage.alt || post.title,
+                color: post.coverImage.color
+              }
+            : null,
+          post.title ?? 'Blog image'
+        )
       }
     }
   })

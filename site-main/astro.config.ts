@@ -52,7 +52,8 @@ export default defineConfig({
     responsiveStyles: true,
     service: {
       entrypoint: 'astro/assets/services/sharp'
-    }
+    },
+    domains: ['cdn.sanity.io']
   },
 
   integrations: [// astro-pure will automatically add sitemap, mdx & unocss
