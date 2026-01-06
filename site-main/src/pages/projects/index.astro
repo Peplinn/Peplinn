@@ -16,30 +16,34 @@ const headings = [
 ]
 ---
 
-<PageLayout title='Projects' {headings}>
-  <h2 id='visualizations'>Visualizations</h2>
+<PageLayout title='Projects'>
+  <!-- <h2 id='visualizations'>Visualizations</h2> -->
   <ProjectSection
     projects={[
       {
-        name: '🍭 Astro-theme-pure',
-        description: 'A simple, clean but powerful blog theme build by astro.',
+        name: 'Owa',
+        description: 'A public transportation tracking application developed with Flutter.',
         links: [
-          { type: 'github', href: 'https://github.com/cworld1/astro-theme-pure' },
-          { type: 'site', href: 'https://github.com/cworld1/astro-theme-pure' },
-          {
-            type: 'doc',
-            href: 'https://github.com/cworld1/astro-theme-pure/blob/main/src/content/blog/customize/index.md'
-          }
+          { type: 'github', href: 'https://github.com/Peplinn/owa' },
+          { type: 'site', href: 'https://github.com/Peplinn/owa' },
+        ]
+      },
+      {
+        name: 'Australian Frogs',
+        description: 'A visualization of frog species distributions in Australia.',
+        links: [
+          { type: 'github', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
+          { type: 'site', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
         ]
       }
     ]}
   />
 
-  <h2 id='programs'>Programs</h2>
+  <!-- <h2 id='programs'>Programs</h2>
   <ProjectSection
     projects={[
       {
-        name: '📒 Notie',
+        name: 'Owa',
         description:
           'Android note App complies with Material You specifications, developed using Java',
         links: [
@@ -60,17 +64,18 @@ const headings = [
         ]
       }
     ]}
-  />
+  /> -->
 
   <p>
-    If you would like to support this website or collaborate on a project, you can buy me a coffee or contact me below.
+    If you would like to support this website or collaborate on a project, you can contact me below or buy me a coffee.
   </p>
-  <Button title='Buy me a coffee' class='w-fit' href='https://buymeacoffee.com/peplinn'>
-    <Icon class='size-5' name='receive-money' slot='before' />
-  </Button>
   <Button title='Say hello' class='w-fit' href='mailto:ebube@ebubeoluoma.com'>
     <Icon class='size-5' name='email' slot='before' />
   </Button>
+  <Button title='Buy me a coffee' class='w-fit' href='https://buymeacoffee.com/peplinn'>
+    <Icon class='size-5' name='receive-money' slot='before' />
+  </Button>
+  
 
 </PageLayout>
 
