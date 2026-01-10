@@ -1,24 +1,23 @@
 ---
 import { Button, Collapse, Spoiler, Timeline, Icon } from 'astro-pure/user'
+import { Image } from 'astro:assets'
 import PageLayout from '@/layouts/CommonPage.astro'
 // import Substats from '@/components/about/Substats.astro'
 // import ToolSection from '@/components/about/ToolSection.astro'
 import config from 'virtual:config'
+import avatar from '@/assets/avatar.png'
 
 const footerConf = config.footer
 let social = footerConf.social || {}
 
-const headings = [
-  { depth: 2, slug: 'now', text: 'Now' },
-  { depth: 2, slug: 'about-site', text: 'About Site' }
-]
+
 ---
 
-<PageLayout title='About' {headings}>
-  <p>I am a data scientist and backend engineer based in Ontario, Canada. I'm interested in work that creates meaningful positive impact and drawn to problems that affect people's daily lives.</p>
+<PageLayout title='About'>
+  <p>I am a data scientist and backend engineer based in Ontario, Canada.</p>
   <p>
-    I focus on climate and urbanization challenges that require deliberate human intervention.
-    I'm also experimenting with machine learning models and advanced statistical methods through my projects.
+    I'm interested in work that sovlves people's day-to-day problems and I have recently focused on climate and urbanization.
+    Through my projects, I experiment with and learn about machine learning models and statistical methods.
   </p>
   <p>
     When I'm not working, I spend time learning, writing, making art, and gaming. Unsurprisingly, these often inspire the work that I do.
@@ -49,26 +48,4 @@ const headings = [
   <p>It's <strong>Christmas Day 2025</strong>. I have just created this section and am reworking the entire site.</p>
   <p>I have also been drawing again. I want to start working on my shading soon.</p>
 
-
-  {/* about-blog */}
-  <h2 id='about-site'>About Site</h2>
-  <p>
-    The content on this website is also supported by the following services:
-  </p>
-  <ul>
-    <li>Domain: <a href='https://porkbun.com/' target='_blank'>Porkbun</a></li>
-    <li>
-      Framework & Theme: <a href='https://astro.build/' target='_blank'>Astro</a> + <a
-        href='https://github.com/cworld1/astro-theme-pure'
-        target='_blank'>Astro Theme Pure</a
-      >
-    </li>
-    <li>
-      Site hosting: <a href='https://vercel.com/' target='_blank'>Vercel</a>
-    </li>
-    <li>
-      CI/CD: <a href='https://vercel.com/workflow' target='_blank'>Vercel Workflow</a>
-    </li>
-    <!-- <li>Resources speedup: <a href='https://cdn.cbd.int/' target='_blank'>CBD CDN</a></li> -->
-  </ul>
 </PageLayout>

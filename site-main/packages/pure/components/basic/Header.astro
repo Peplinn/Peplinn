@@ -1,26 +1,47 @@
 ---
 import config from 'virtual:config'
-
 import { Icon } from '../user'
+
+// 1. Determine if we are on the homepage
+const isHomePage = Astro.url.pathname === '/' || Astro.url.pathname === '';
 ---
 
 <header-component
   class='group sticky top-4 z-50 max-md:z-30 mb-12 flex items-center justify-between rounded-xl border border-transparent max-sm:py-1 sm:rounded-2xl'
 >
+  {/* 2. Conditionally hide Brand on Desktop (sm) if isHomePage is true */}
   <a
-    class='z-30 text-xl font-semibold group-[.not-top]:ms-2 sm:group-[.not-top]:ms-3'
+    class:list={[
+      'z-30 text-xl font-semibold group-[.not-top]:ms-2 sm:group-[.not-top]:ms-3',
+      { 'sm:hidden': isHomePage } 
+    ]}
     style='transition:margin-inline 0.3s'
     href='/'
     aria-label='Brand'>{config.title}</a
   >
 
-  <div class='flex items-center gap-x-2'>
+  <div 
+    class:list={[
+      'flex items-center gap-x-2',
+      // If on Home Page (Desktop), make this wrapper fill the space and separate children
+      { 'sm:w-full sm:justify-between': isHomePage } 
+    ]}
+  >
     {/* Menu links */}
     <div
       id='headerExpandContent'
       class='end-0 start-0 top-12 grid border border-transparent group-[.not-top]:rounded-xl group-[.expanded]:opacity-100 dark:group-[.expanded.not-top]:bg-muted max-sm:absolute max-sm:opacity-0 max-sm:group-[.not-top]:border-border max-sm:group-[.expanded.not-top]:bg-background max-sm:group-[.not-top]:px-4 max-sm:group-[.not-top]:py-2 sm:grid-rows-1'
     >
-      <div class='flex flex-col items-center justify-center overflow-hidden sm:flex-row'>
+      {/* 3. Adjust alignment: 
+         If Home: 'sm:justify-start' (Align Left). 
+         Else: Keep 'justify-center' (Align Center).
+      */}
+      <div 
+        class:list={[
+          "flex flex-col items-center overflow-hidden sm:flex-row",
+          isHomePage ? "sm:justify-start" : "justify-center"
+        ]}
+      >
         {
           config.header.menu.map((item) => (
             <a
@@ -32,17 +53,22 @@ import { Icon } from '../user'
             </a>
           ))
         }
-        <div class='flex w-full grow flex-row justify-end gap-x-3 sm:w-fit sm:gap-x-5'>
-          <a class='px-1 py-2 transition-none sm:px-2' href='/search' title='Search'>
-            <span class='sr-only'>Search</span>
-            <Icon name='search' class='size-5' />
-          </a>
-        </div>
+        {/* Search link removed from here */}
       </div>
     </div>
 
-    {/* buttons */}
+    {/* Buttons: Search, Dark Mode, Menu Toggle */}
     <div class='z-30 flex gap-x-4 group-[.not-top]:gap-x-2' style='transition:gap 0.3s'>
+      {/* 4. Search moved here and styled to match buttons */}
+      <a 
+        class='box-content size-5 rounded-md border p-1.5 transition-colors hover:bg-border sm:group-[.not-top]:rounded-xl' 
+        href='/search' 
+        title='Search'
+      >
+        <span class='sr-only'>Search</span>
+        <Icon name='search' class='size-5' />
+      </a>
+
       <button
         id='toggleDarkMode'
         class='group/dark box-content size-5 rounded-md border p-1.5 transition-colors hover:bg-border sm:group-[.not-top]:rounded-xl'

@@ -5,7 +5,7 @@ export const theme: ThemeUserConfig = {
   /** Title for your website. Will be used in metadata and as browser tab title. */
   title: 'Ebube Oluoma',
   /** Will be used in index page & copyright declaration */
-  author: 'Chidiebube Oluoma',
+  author: 'Ebube Oluoma',
   /** Description metadata for your website. Can be used in page metadata. */
   description: 'Welcome friend!',
   /** The default favicon for your site which should be a path to an image in the `public/` directory. */
