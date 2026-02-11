@@ -9,6 +9,7 @@ import PageLayout from '@/layouts/BaseLayout.astro'
 import Section from '@/components/home/Section.astro'
 import avatar from '@/assets/avatar.png'
 import config from '@/site-config'
+import ProjectSection from '@/components/projects/ProjectSection.astro'
 
 // const MAX_POSTS = 10
 const allPosts = await getSanityPosts()
@@ -20,36 +21,34 @@ const allPostsByDate = [...allPosts].sort(
 ---
 
 <PageLayout meta={{ title: 'Home' }} highlightColor='#081D39'>
-  <main class='flex w-full flex-col items-center'>
-    <section class='animate mb-10 flex flex-col items-center gap-y-7' id='content-header'>
+  <main class='flex w-full flex-col items-start md:w-4/5 lg:w-5/6 mx-auto'>
+    <!-- Header Section with Avatar and Greeting -->
+    <section class='animate mb-4 flex flex-row items-center gap-x-4 w-full' id='content-header'>
       <Image
         src={avatar}
         alt='profile'
-        class='h-28 w-auto rounded-full border p-1'
+        class='h-24 w-24 flex-shrink-0 rounded-full border p-1'
         loading='eager'
       />
 
-      <div class='flex flex-col items-center gap-y-4'>
+      <div class='flex flex-col gap-y-1'>
         <h1 class='text-3xl font-bold'>Hey! I'm Ebube</h1>
-        <div class='flex flex-wrap justify-center gap-x-7 gap-y-3'>
-          <Label title='Data Scientist | Backend Engineer'>
-            <!-- <Icon name='location' class='size-5' slot='icon' /> -->
-          </Label>
-        </div>
+        <p class='text-base text-foreground/70'>/ae·boo·bae/</p>
       </div>
-
     </section>
 
-    <div id='content' class='animate flex flex-col gap-y-10 md:w-4/5 lg:w-5/6'>
-      <Section title='About'>
-        <p class='text-muted-foreground'>
+    <div id='content' class='animate flex flex-col gap-y-10 w-full'>
+      <!-- About Section (no heading) -->
+      <div class='flex flex-col gap-y-4'>
+        <p class='text-base text-foreground/80'>
           I use data to solve problems. My interests span machine learning, statistical modelling, and software development, and I am drawn to projects rooted in real-world systems.
         </p>
-        <Button title='More about me' class='w-fit self-end' href='/about' variant='ahead' />
-      </Section>
+        <Button title='More about me' class='w-fit' href='/about' variant='ahead' />
+      </div>
+
       {
-        allPostsByDate.length > 0 && (
-          <Section title='Recent Posts'>
+        allPostsByDate.slice(0, 3).length > 0 && (
+          <Section title='Recent Posts' class='!flex-col !gap-y-3'>
             <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
               {allPostsByDate.map((p) => (
                 <li class='flex flex-col gap-x-2 sm:flex-row'>
@@ -57,10 +56,27 @@ const allPostsByDate = [...allPosts].sort(
                 </li>
               ))}
             </ul>
-            <Button title='More posts' class='w-fit self-end' href='/blog' variant='ahead' />
+            <Button title='More posts' class='w-fit' href='/blog' variant='ahead' />
           </Section>
         )
       }
+      
+      <Section title='Recent Projects' class='!flex-col !gap-y-5'>
+        <ProjectSection
+          projects={[
+            {
+              name: 'Australian Frogs',
+              description: 'A visualization of frog species distributions in Australia.',
+              links: [
+                { type: 'github', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
+                { type: 'site', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
+              ]
+            }
+            // Add up to 4 more projects here to show 5 total
+          ].slice(0, 5)}
+        />
+        <Button title='More projects' class='w-fit' href='/projects' variant='ahead' />
+      </Section>
 
     </div>
   </main>
