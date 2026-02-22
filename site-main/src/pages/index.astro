@@ -10,6 +10,9 @@ import Section from '@/components/home/Section.astro'
 import avatar from '@/assets/avatar.png'
 import config from '@/site-config'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
+import { getSanityProjects } from '../lib/sanity'
+
+const projects = await getSanityProjects()
 
 // const MAX_POSTS = 10
 const allPosts = await getSanityPosts()
@@ -63,20 +66,16 @@ const allPostsByDate = [...allPosts].sort(
       
       <Section title='Recent Projects' class='!flex-col !gap-y-5'>
         <ProjectSection
-          projects={[
-            {
-              name: 'Australian Frogs',
-              description: 'A visualization of frog species distributions in Australia made with Python.',
-              links: [
-                { type: 'github', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
-                { type: 'site', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
-              ]
-            }
-            // Add up to 4 more projects here to show 5 total
-          ].slice(0, 5)}
+          projects={projects.slice(0, 5).map(p => ({
+            name: p.data.title,
+            description: p.data.description,
+            image: p.data.image,
+            links: [
+              p.data.github && { type: 'github', href: p.data.github },
+              p.data.liveSite && { type: 'site', href: p.data.liveSite }
+            ].filter(Boolean)
+          }))}
         />
-        <Button title='More projects' class='w-fit' href='/projects' variant='ahead' />
-      </Section>
 
     </div>
   </main>
