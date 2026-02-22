@@ -73,7 +73,9 @@ const allPostsByDate = [...allPosts].sort(
             links: [
               p.data.github && { type: 'github', href: p.data.github },
               p.data.liveSite && { type: 'site', href: p.data.liveSite }
-            ].filter(Boolean)
+            ].filter(
+              (l): l is { type: string; href: string } => Boolean(l)
+            )
           }))}
         />
 
