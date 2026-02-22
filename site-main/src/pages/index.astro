@@ -59,14 +59,14 @@ const allPostsByDate = [...allPosts].sort(
                 </li>
               ))}
             </ul>
-            <Button title='More posts' class='w-fit' href='/blog' variant='ahead' />
+            <Button title='All posts' class='w-fit' href='/blog' variant='ahead' />
           </Section>
         )
       }
       
       <Section title='Recent Projects' class='!flex-col !gap-y-5'>
         <ProjectSection
-          projects={projects.slice(0, 5).map(p => ({
+          projects={projects.filter(p => p.data.featured).slice(0, 5).map(p => ({
             name: p.data.title,
             description: p.data.description,
             image: p.data.image,
@@ -78,7 +78,8 @@ const allPostsByDate = [...allPosts].sort(
             )
           }))}
         />
-
+        <Button title='All projects' class='w-fit' href='/projects' variant='ahead' />
+      </Section>
     </div>
   </main>
 </PageLayout>
