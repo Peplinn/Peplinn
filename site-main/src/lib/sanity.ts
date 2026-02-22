@@ -194,6 +194,7 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
     title,
     "slug": slug.current,
     description,
+    featured,
     github,
     liveSite,
     image {
@@ -221,6 +222,7 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
       data: {
         title: project.title,
         description: project.description || '',
+        featured: project.featured,
         github: project.github,
         liveSite: project.liveSite,
         image: hasImage
