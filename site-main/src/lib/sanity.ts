@@ -67,6 +67,7 @@ export type ProjectCollectionItem = {
   data: {
     title: string
     description: string
+    featured: boolean
     github?: string
     liveSite?: string
     image?: {
