@@ -15,7 +15,9 @@ function diveChildren(item: TocItem, depth: number): TocItem[] {
 
 export function generateToc(headings: readonly MarkdownHeading[]) {
   // this ignores/filters out h1 element(s)
-  const bodyHeadings = [...headings.filter(({ depth }) => depth > 1)]
+  const bodyHeadings = headings
+    .filter((h): h is MarkdownHeading => Boolean(h) && typeof h.depth === 'number')
+    .filter((h) => h.depth > 1)
   const toc: TocItem[] = []
 
   bodyHeadings.forEach((h) => {
@@ -25,6 +27,7 @@ export function generateToc(headings: readonly MarkdownHeading[]) {
     if (heading.depth === 2) {
       toc.push(heading)
     } else {
+      if (!toc.length) return
       const lastItemInToc = toc[toc.length - 1]!
       if (heading.depth < lastItemInToc.depth) {
         throw new Error(`Orphan heading found: ${heading.text}.`)
