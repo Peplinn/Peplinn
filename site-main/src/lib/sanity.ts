@@ -61,6 +61,24 @@ export type BlogCollectionPost = {
   }
 }
 
+export type ProjectCollectionItem = {
+  id: string
+  slug: string
+  data: {
+    title: string
+    description: string
+    github?: string
+    liveSite?: string
+    image?: {
+      src: string
+      alt: string
+      width: number
+      height: number
+      color?: string
+    }
+  }
+}
+
 
 function astroImage(src: string, width: number, height: number, format: 'jpg' | 'png' = 'jpg') {
   return { src: { src, width, height, format } }
@@ -165,6 +183,55 @@ export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
             : null,
           post.title ?? 'Blog image'
         )
+      }
+    }
+  })
+}
+
+export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
+  const query = `*[_type == "project"] | order(publishedAt desc) {
+    _id,
+    title,
+    "slug": slug.current,
+    description,
+    github,
+    liveSite,
+    image {
+      ...,
+      asset-> {
+        _id,
+        metadata { dimensions }
+      }
+    }
+  }`
+
+  const projects = await sanityClient.fetch(query)
+
+  return projects.map((project: any) => {
+    const dimensions = project.image?.asset?.metadata?.dimensions || {
+      width: 800,
+      height: 600
+    }
+
+    const hasImage = project.image && project.image.asset
+
+    return {
+      id: project.slug,
+      slug: project.slug,
+      data: {
+        title: project.title,
+        description: project.description || '',
+        github: project.github,
+        liveSite: project.liveSite,
+        image: hasImage
+          ? {
+              src: urlFor(project.image).width(800).url(),
+              alt: project.image.alt || project.title,
+              width: dimensions.width,
+              height: dimensions.height,
+              color: project.image.color
+            }
+          : undefined
       }
     }
   })

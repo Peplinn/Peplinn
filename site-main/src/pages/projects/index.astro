@@ -9,6 +9,9 @@ import Sponsorship from '@/components/projects/Sponsorship.astro'
 import alipay from '@/assets/alipay-qrcode.jpg'
 import KeyIcon from '@/assets/icons/key.svg'
 import wechat from '@/assets/wechat-qrcode.jpg'
+import { getSanityProjects } from '../../lib/sanity'
+
+const projects = await getSanityProjects()
 
 const headings = [
   { depth: 2, slug: 'visualizations', text: 'Visualizations' },
@@ -19,16 +22,17 @@ const headings = [
 <PageLayout title='Projects'>
   <h2 id='visualizations'>Visualizations</h2>
   <ProjectSection
-    projects={[
-      {
-        name: 'Australian Frogs',
-        description: 'A visualization of frog species distributions in Australia made with Python.',
-        links: [
-          { type: 'github', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
-          { type: 'site', href: 'https://github.com/Peplinn/visualizations/tree/main/tidytuesday/australian-frogs' },
-        ]
-      }
-    ]}
+    projects={projects.slice(0, 5).map(p => ({
+            name: p.data.title,
+            description: p.data.description,
+            image: p.data.image,
+            links: [
+              p.data.github && { type: 'github', href: p.data.github },
+              p.data.liveSite && { type: 'site', href: p.data.liveSite }
+            ].filter(
+              (l): l is { type: string; href: string } => Boolean(l)
+            )
+          }))}
   />
 
   <!-- <h2 id='programs'>Programs</h2>
