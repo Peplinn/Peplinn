@@ -1,0 +1,32 @@
+# Vercel Speed Insights Implementation
+
+## Summary
+Successfully installed and configured Vercel Speed Insights for the Astro project.
+
+## Changes Made
+
+### 1. Package Installation
+- Installed `@vercel/speed-insights` package version ^1.3.1
+- Updated `package.json` with the new dependency
+- Updated `package-lock.json` with dependency resolution
+
+### 2. Layout Integration
+Modified `src/layouts/BaseLayout.astro`:
+- Added import: `import SpeedInsights from '@vercel/speed-insights/astro'`
+- Added `<SpeedInsights />` component in the `<head>` section, right after `<Analytics />`
+
+## Implementation Details
+The SpeedInsights component was added to the BaseLayout.astro file, which is the main layout component used throughout the site. This ensures that Speed Insights will be active on all pages that use this layout.
+
+The implementation follows the same pattern as the existing Vercel Analytics integration, ensuring consistency with the project's architecture.
+
+## Verification
+- ✅ Build completed successfully
+- ✅ Type checking passed (0 errors)
+- ✅ No new linting errors introduced
+- ✅ Package manager lock file updated (package-lock.json)
+
+## Notes
+- The component is placed in the `<head>` section alongside Analytics for optimal loading
+- Works for both static and SSR Astro applications
+- No breaking changes introduced to existing functionality
