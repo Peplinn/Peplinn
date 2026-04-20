@@ -112,11 +112,6 @@ const postDate = data.updatedDate ?? data.publishDate
               {data.description}
             </p>
             <div class='flex items-center gap-2 py-1.5 text-sm italic leading-4 text-muted-foreground sm:py-3'>
-              {/* reading time */}
-              <span class='flex items-center gap-1'>
-                <Icon name='time' class='size-4' />
-                {minutesRead}
-              </span>
               {/* language */}
               {data.language && (
                 <span class='flex items-center gap-1'>

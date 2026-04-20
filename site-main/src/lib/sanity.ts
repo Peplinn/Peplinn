@@ -1,4 +1,3 @@
-// src/lib/sanity.ts
 import { sanityClient } from 'sanity:client'
 import createImageUrlBuilder from "@sanity/image-url"
 import { getReadingTime } from 'packages/pure/utils'
@@ -7,6 +6,10 @@ const builder = createImageUrlBuilder(sanityClient)
 
 export function urlFor(source: any) {
   return builder.image(source)
+}
+
+function sanityImageUrl(source: any, width: number) {
+  return urlFor(source).width(width).format('webp').quality(80).url()
 }
 
 export function getHeadingsFromPortableText(blocks: any[]) {
@@ -27,7 +30,6 @@ export function getHeadingsFromPortableText(blocks: any[]) {
     })
 }
 
-// Build-safe Astro type
 export type WritingCollectionPost = {
   id: string
   slug: string
@@ -43,7 +45,7 @@ export type WritingCollectionPost = {
     minutesRead: string
     updatedDate?: Date
     coverImage?: {
-      src: { src: string; width: number; height: number; format: 'jpg' | 'png' }
+      src: { src: string; width: number; height: number; format: 'webp' }
       alt: string
       color?: string
       width?: number
@@ -51,7 +53,7 @@ export type WritingCollectionPost = {
       inferSize?: boolean
     }
     heroImage?: {
-      src: { src: string; width: number; height: number; format: 'jpg' | 'png' }
+      src: { src: string; width: number; height: number; format: 'webp' }
       alt: string
       color?: string
       width?: number
@@ -68,6 +70,9 @@ export type ProjectCollectionItem = {
     title: string
     description: string
     featured: boolean
+    type: 'project' | 'visualization'
+    longDescription?: string
+    approach?: string
     github?: string
     liveSite?: string
     image?: {
@@ -80,29 +85,17 @@ export type ProjectCollectionItem = {
   }
 }
 
-
-function astroImage(src: string, width: number, height: number, format: 'jpg' | 'png' = 'jpg') {
-  return { src: { src, width, height, format } }
-}
-
-function mapHeroImage(image: any, fallbackAlt = '') {
-  if (!image || !image.src) return undefined; // skip if no image
-
+function mapHeroImage(source: any, alt: string, width: number) {
+  if (!source?.asset) return undefined
+  const dim = source.asset?.metadata?.dimensions
   return {
-    // src: {
-    //   src: image.src,      // must be string URL
-    //   width: image.width || 1200,
-    //   height: image.height || 800,
-    //   format: 'jpg',       // Astro Image format
-    // },
-    src: typeof image.src === 'string' ? image.src : image.src,
-    alt: image.alt ?? fallbackAlt,
-    width: image.width || 1200,
-    height: image.height || 800,
-    color: image.color,
+    src: sanityImageUrl(source, width),
+    alt: source.alt ?? alt,
+    width: dim?.width ?? width,
+    height: dim?.height ?? 800,
+    color: source.color,
   }
 }
-
 
 export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
@@ -125,27 +118,8 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   const posts = await sanityClient.fetch(query)
 
   return posts.map((post: any) => {
-    const dimensions = post.heroImage?.asset?.metadata?.dimensions || { width: 1200, height: 800 }
-    const hasImage = post.heroImage && post.heroImage.asset
     const rawMarkdown = post.content || post.body || ""
     const readStats = getReadingTime(rawMarkdown)
-
-    const heroImage = hasImage
-      ? {
-          src: astroImage(
-            urlFor(post.heroImage).width(1200).url(),
-            dimensions?.width || 1200,
-            dimensions?.height || 800,
-            'jpg'
-          ).src,
-          alt: post.heroImage.alt || post.title,
-          color: post.heroImage.color,
-          width: dimensions?.width || 1200,
-          height: dimensions?.height || 800
-        }
-      : undefined
-
-    const coverImage = heroImage // reuse same
 
     return {
       id: post.slug,
@@ -160,30 +134,10 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
         publishDate: new Date(post.publishedAt),
         tags: post.tags || [],
         minutesRead: readStats.text,
-        heroImage: mapHeroImage(
-          post.heroImage
-            ? { 
-                src: urlFor(post.heroImage).width(1200).url(),
-                width: post.heroImage.asset?.metadata?.dimensions?.width,
-                height: post.heroImage.asset?.metadata?.dimensions?.height,
-                alt: post.heroImage.alt || post.title,
-                color: post.heroImage.color
-              }
-            : null,
-          post.title ?? 'Post image'
-        ),
-        coverImage: mapHeroImage(
-          post.coverImage
-            ? {
-                src: urlFor(post.coverImage).width(1200).url(),
-                width: post.coverImage.asset?.metadata?.dimensions?.width,
-                height: post.coverImage.asset?.metadata?.dimensions?.height,
-                alt: post.coverImage.alt || post.title,
-                color: post.coverImage.color
-              }
-            : null,
-          post.title ?? 'Post image'
-        )
+        // 900px for full post hero (content column is max ~900px wide)
+        heroImage: mapHeroImage(post.heroImage, post.title, 900),
+        // 400px for card thumbnail (w-3/5 of a half-width card)
+        coverImage: mapHeroImage(post.heroImage, post.title, 400),
       }
     }
   })
@@ -195,7 +149,10 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
     title,
     "slug": slug.current,
     description,
+    longDescription,
+    approach,
     featured,
+    type,
     github,
     liveSite,
     image {
@@ -210,11 +167,7 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
   const projects = await sanityClient.fetch(query)
 
   return projects.map((project: any) => {
-    const dimensions = project.image?.asset?.metadata?.dimensions || {
-      width: 800,
-      height: 600
-    }
-
+    const dim = project.image?.asset?.metadata?.dimensions
     const hasImage = project.image && project.image.asset
 
     return {
@@ -224,14 +177,17 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
         title: project.title,
         description: project.description || '',
         featured: project.featured,
+        type: project.type ?? 'project',
+        longDescription: project.longDescription,
+        approach: project.approach,
         github: project.github,
         liveSite: project.liveSite,
         image: hasImage
           ? {
-              src: urlFor(project.image).width(800).url(),
+              src: sanityImageUrl(project.image, 400),
               alt: project.image.alt || project.title,
-              width: dimensions.width,
-              height: dimensions.height,
+              width: dim?.width ?? 400,
+              height: dim?.height ?? 300,
               color: project.image.color
             }
           : undefined
