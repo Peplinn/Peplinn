@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets'
 
 import { PostPreview } from 'astro-pure/components/pages'
-import { getBlogCollection } from 'astro-pure/server'
+import { getWritingCollection } from 'astro-pure/server'
 import { getSanityPosts } from '../lib/sanity'
 import { Button, Card, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
@@ -59,7 +59,7 @@ const allPostsByDate = [...allPosts].sort(
                 </li>
               ))}
             </ul>
-            <Button title='All posts' class='w-fit' href='/blog' variant='ahead' />
+            <Button title='All posts' class='w-fit' href='/writing' variant='ahead' />
           </Section>
         )
       }

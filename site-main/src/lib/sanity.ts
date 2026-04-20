@@ -28,11 +28,11 @@ export function getHeadingsFromPortableText(blocks: any[]) {
 }
 
 // Build-safe Astro type
-export type BlogCollectionPost = {
+export type WritingCollectionPost = {
   id: string
   slug: string
   body: string
-  collection: 'blog'
+  collection: 'writing'
   data: {
     title: string
     description: string
@@ -104,7 +104,7 @@ function mapHeroImage(image: any, fallbackAlt = '') {
 }
 
 
-export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
+export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   const query = `*[_type == "blogPost"] | order(publishedAt desc) {
     _id,
     publishedAt,
@@ -151,7 +151,7 @@ export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
       id: post.slug,
       slug: post.slug,
       body: rawMarkdown,
-      collection: 'blog',
+      collection: 'writing',
       data: {
         title: post.title,
         description: post.description || '',
@@ -170,7 +170,7 @@ export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
                 color: post.heroImage.color
               }
             : null,
-          post.title ?? 'Blog image'
+          post.title ?? 'Article image'
         ),
         coverImage: mapHeroImage(
           post.coverImage
@@ -182,7 +182,7 @@ export async function getSanityPosts(): Promise<BlogCollectionPost[]> {
                 color: post.coverImage.color
               }
             : null,
-          post.title ?? 'Blog image'
+          post.title ?? 'Article image'
         )
       }
     }

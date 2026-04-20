@@ -1,6 +1,6 @@
 ---
 import type { GetStaticPaths, Page } from 'astro'
-import type { BlogCollectionPost } from '../../../lib/sanity'
+import type { WritingCollectionPost } from '../../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { getSanityTags } from '../../../lib/sanity-helpers'
@@ -30,7 +30,7 @@ export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
 }
 
 interface Props {
-  page: Page<BlogCollectionPost>
+  page: Page<WritingCollectionPost>
 }
 
 const { page } = Astro.props
@@ -58,7 +58,7 @@ const paginationProps = {
 ---
 
 <PageLayout {meta}>
-  <Button title='Back' href='/blog' variant='back' />
+  <Button title='Back' href='/writing' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
       <h1 class='mb-6 flex items-end gap-x-2 text-3xl font-medium'>
@@ -67,7 +67,7 @@ const paginationProps = {
       </h1>
     </div>
 
-    <section id='content' class='animate' aria-label='Blog post list'>
+    <section id='content' class='animate' aria-label='Writing post list'>
       <ul class='flex flex-col gap-y-3 text-start'>
         {page.data.map((post) => <PostPreview as='h2' {post} detailed />)}
       </ul>
