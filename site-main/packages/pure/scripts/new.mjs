@@ -33,7 +33,7 @@ function getDate() {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-/** get blog title slug */
+/** get article title slug */
 function getPostSlug(postTitle) {
   let slug = slugify(postTitle).toLocaleLowerCase()
   if (slug === '') {
@@ -55,7 +55,7 @@ Example:
   astro-pure new "Hello World"
   astro-pure new -l zh "你好，世界"
 `
-const TARGET_DIR = 'src/content/blog/'
+const TARGET_DIR = 'src/content/writing/'
 
 export default function main(args) {
   const parsedArgs = minimist(args, {

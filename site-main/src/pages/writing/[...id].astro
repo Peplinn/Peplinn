@@ -2,7 +2,7 @@
 import PostLayout from '@/layouts/BlogPost.astro'
 
 // Type-only import to satisfy `verbatimModuleSyntax`/build
-import type { BlogCollectionPost } from '../../lib/sanity'
+import type { WritingCollectionPost } from '../../lib/sanity'
 import { getSanityPosts } from '../../lib/sanity'
 
 import { marked } from 'marked'
@@ -21,7 +21,7 @@ import GithubSlugger from 'github-slugger'
 export const prerender = true
 
 export async function getStaticPaths() {
-  const posts: BlogCollectionPost[] = await getSanityPosts()
+  const posts: WritingCollectionPost[] = await getSanityPosts()
 
   return posts.map((post) => ({
     params: { id: post.slug },
@@ -32,7 +32,7 @@ export async function getStaticPaths() {
   }))
 }
 
-const { post, posts } = Astro.props as { post: BlogCollectionPost; posts: BlogCollectionPost[] }
+const { post, posts } = Astro.props as { post: WritingCollectionPost; posts: WritingCollectionPost[] }
 
 // --- SHIKI SETUP ---
 const highlighter = await createHighlighter({

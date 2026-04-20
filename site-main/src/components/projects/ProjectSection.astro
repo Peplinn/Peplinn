@@ -33,55 +33,54 @@ const projectIconSet: Record<string, iconsType> = {
 }
 ---
 
-<div class={className} {...props}>
-  <div class="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 sm:gap-y-4">
-    {
-      projects.map((project) => {
-        return (
-          <div class="relative overflow-hidden rounded-xl border flex flex-col">
-            {project.image && (
-              <img
-                class="w-full h-48 object-cover rounded-t-xl"
-                src={project.image.src}
-                alt={project.image.alt}
-                width={project.image.width}
-                height={project.image.height}
-                loading="lazy"
-              />
-            )}
+<div class={cn('grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 sm:gap-y-4', className)} {...props}>
+  {
+    projects.map((project) => (
+      <div class='group/card relative overflow-hidden rounded-2xl border bg-background flex flex-col px-4 py-3 transition-colors ease-in-out hover:bg-muted'>
+        {project.image && (
+          <img
+            class='cover-image absolute end-0 top-0 z-0 h-full w-3/5 object-cover opacity-50 transition-opacity duration-300 group-hover/card:opacity-70'
+            src={project.image.src}
+            alt={project.image.alt}
+            width={project.image.width}
+            height={project.image.height}
+            loading='lazy'
+          />
+        )}
 
-            <div class="relative z-10 flex flex-col gap-y-2 px-3 py-2 sm:px-4 sm:py-3">
-              <a
-                class="line-clamp-1 font-medium text-foreground no-underline transition-colors"
-                href={project.links[0].href}
-                target="_blank"
-              >
-                {project.name}
-              </a>
-
-              <div class="line-clamp-2 leading-snug text-muted-foreground sm:h-12">
-                {project.description}
-              </div>
-
-              <div class="flex flex-row items-center gap-x-2 sm:gap-x-3">
-                {project.links.map((link) => {
-                  const icon = projectIconSet[link.type]
-                  return (
-                    <a
-                      href={link.href}
-                      class="rounded-full bg-muted p-1 text-muted-foreground transition-colors sm:p-1.5"
-                      aria-label={link.type}
-                      target="_blank"
-                    >
-                      <Icon class="size-5" name={icon} />
-                    </a>
-                  )
-                })}
-              </div>
-            </div>
+        <div class={cn('relative z-10 flex flex-col gap-y-1.5', project.image && 'w-3/5')}>
+          <div class='line-clamp-1 font-medium text-foreground'>
+            {project.name}
           </div>
-        )
-      })
-    }
-  </div>
+
+          <p class='line-clamp-2 text-sm leading-snug text-muted-foreground'>
+            {project.description}
+          </p>
+
+          <div class='flex flex-row items-center gap-x-2 pt-0.5'>
+            {project.links.map((link) => {
+              const icon = projectIconSet[link.type]
+              return (
+                <a
+                  href={link.href}
+                  class='rounded-full bg-muted p-1 text-muted-foreground transition-colors hover:text-foreground'
+                  aria-label={link.type}
+                  target='_blank'
+                >
+                  <Icon class='size-4' name={icon} />
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    ))
+  }
 </div>
+
+<style>
+  .cover-image {
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+    -webkit-mask-image: -webkit-linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+  }
+</style>

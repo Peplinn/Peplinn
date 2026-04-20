@@ -1,7 +1,7 @@
 ---
 // src/pages/blog/[...page].astro
 import type { GetStaticPaths, Page } from 'astro'
-import type { BlogCollectionPost } from '../../lib/sanity'
+import type { WritingCollectionPost } from '../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { Button, Icon } from 'astro-pure/user'
@@ -28,7 +28,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 }) satisfies GetStaticPaths
 
 interface Props {
-  page: Page<BlogCollectionPost>
+  page: Page<WritingCollectionPost>
   uniqueTags: string[]
   collectionsCount: number
 }
@@ -36,8 +36,8 @@ interface Props {
 const { page, uniqueTags, collectionsCount } = Astro.props
 
 const meta = {
-  description: 'Some posts or archives of my blog',
-  title: 'Blog'
+  description: 'Interesting things I want to share.',
+  title: 'Writing'
 }
 
 const paginationProps = {
@@ -60,20 +60,20 @@ const paginationProps = {
   <Button title='Back' href='/' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
-      <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Blog</h1>
+      <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>
     </div>
     {
       page.data.length === 0 ? (
         <p>No posts yet.</p>
       ) : (
         <div class='grid gap-y-16 sm:grid-cols-[3fr_1fr] sm:gap-x-8'>
-          <section aria-label='Blog posts list' class='animate' id='content'>
+          <section aria-label='Posts list' class='animate' id='content'>
             {/* header */}
             <div class='mb-3 flex flex-col justify-between text-sm sm:mb-5 sm:flex-row'>
               <span class='text-muted-foreground'>
                 Page {page.currentPage} - Showing {page.data.length} of {collectionsCount} posts
               </span>
-              <a aria-label='View all blog by years' href='/archives' data-astro-prefetch>
+              <a aria-label='View all posts by years' href='/archives' data-astro-prefetch>
                 View all posts by years →
               </a>
             </div>
@@ -102,7 +102,7 @@ const paginationProps = {
                 ))}
               </ul>
               <span class='mt-4 block sm:text-end'>
-                <a aria-label='View all blog categories' href='/tags' data-astro-prefetch>
+                <a aria-label='View post categories' href='/tags' data-astro-prefetch>
                   View all →
                 </a>
               </span>

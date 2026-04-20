@@ -1,7 +1,7 @@
-import type { BlogCollectionPost } from './sanity'
+import type { WritingCollectionPost } from './sanity'
 
-export function groupSanityPostsByYear(posts: BlogCollectionPost[]) {
-  return posts.reduce<Record<string, BlogCollectionPost[]>>((acc, post) => {
+export function groupSanityPostsByYear(posts: WritingCollectionPost[]) {
+  return posts.reduce<Record<string, WritingCollectionPost[]>>((acc, post) => {
     const year = new Date(post.data.publishDate).getFullYear().toString()
     acc[year] ||= []
     acc[year].push(post)
@@ -9,7 +9,7 @@ export function groupSanityPostsByYear(posts: BlogCollectionPost[]) {
   }, {})
 }
 
-export function getSanityTagsWithCount(posts: BlogCollectionPost[]) {
+export function getSanityTagsWithCount(posts: WritingCollectionPost[]) {
   const map = new Map<string, number>()
   posts.forEach(p => {
     p.data.tags.forEach(tag => {
@@ -19,6 +19,6 @@ export function getSanityTagsWithCount(posts: BlogCollectionPost[]) {
   return Array.from(map.entries()).map(([tag, count]) => ({ tag, count }))
 }
 
-export function getSanityTags(posts: BlogCollectionPost[]) {
+export function getSanityTags(posts: WritingCollectionPost[]) {
   return [...new Set(posts.flatMap(p => p.data.tags))]
 }
