@@ -17,7 +17,7 @@ const allPostsByYear = Object.entries(groupSanityPostsByYear(allPostsByDate))
 
 
 const meta = {
-  description: 'A list of all the years of writing my articles',
+  description: 'A list of all the years of writing my posts.',
   title: 'Archives'
 }
 ---
@@ -30,7 +30,7 @@ const meta = {
       <h1 class='mb-6 text-3xl font-medium'>Archives</h1>
     </div>
 
-    {allPosts.length === 0 && <p>No articles yet.</p>}
+    {allPosts.length === 0 && <p>No poss yet.</p>}
 
     <section id='content' class='animate' aria-label='Writing post list'>
       {

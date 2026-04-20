@@ -170,7 +170,7 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
                 color: post.heroImage.color
               }
             : null,
-          post.title ?? 'Article image'
+          post.title ?? 'Post image'
         ),
         coverImage: mapHeroImage(
           post.coverImage
@@ -182,7 +182,7 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
                 color: post.coverImage.color
               }
             : null,
-          post.title ?? 'Article image'
+          post.title ?? 'Post image'
         )
       }
     }
