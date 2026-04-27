@@ -50,21 +50,6 @@ const allPostsByDate = [...allPosts].sort(
         <Button title='More about me' class='w-fit' href='/about' variant='ahead' />
       </div>
 
-      {
-        allPostsByDate.slice(0, 3).length > 0 && (
-          <Section title='Recent Posts' class='!flex-col !gap-y-3'>
-            <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
-              {allPostsByDate.map((p) => (
-                <li class='flex flex-col gap-x-2 sm:flex-row'>
-                  <PostPreview post={p} />
-                </li>
-              ))}
-            </ul>
-            <Button title='All posts' class='w-fit' href='/writing' variant='ahead' />
-          </Section>
-        )
-      }
-      
       <Section title='Recent Projects' class='!flex-col !gap-y-5'>
         <ProjectSection
           projects={projects.filter(p => p.data.featured).slice(0, 5).map(p => ({
@@ -81,6 +66,23 @@ const allPostsByDate = [...allPosts].sort(
         />
         <Button title='All projects' class='w-fit' href='/projects' variant='ahead' />
       </Section>
+
+      {
+        allPostsByDate.slice(0, 3).length > 0 && (
+          <Section title='Recent Posts' class='!flex-col !gap-y-3'>
+            <ul class='flex flex-col gap-y-1.5 sm:gap-y-2'>
+              {allPostsByDate.map((p) => (
+                <li class='flex flex-col gap-x-2 sm:flex-row'>
+                  <PostPreview post={p} />
+                </li>
+              ))}
+            </ul>
+            <Button title='All posts' class='w-fit' href='/writing' variant='ahead' />
+          </Section>
+        )
+      }
+      
+      
     </div>
   </main>
 </PageLayout>
