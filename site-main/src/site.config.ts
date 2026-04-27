@@ -47,8 +47,8 @@ export const theme: ThemeUserConfig = {
   /** Configure the header of your site. */
   header: {
     menu: [
-      { title: 'Writing', link: '/writing' },
       { title: 'Projects', link: '/projects' },
+      { title: 'Writing', link: '/writing' },
       // { title: 'Visualizations', link: '/visualizations' },
       { title: 'About', link: '/about' }
     ]
