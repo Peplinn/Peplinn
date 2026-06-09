@@ -1,4 +1,4 @@
-import { createClient } from '@sanity/client' // Switch to explicit creation for flexible config
+import { sanityClient as baseClient } from 'sanity:client' // Switch to explicit creation for flexible config
 import createImageUrlBuilder from "@sanity/image-url"
 import { getReadingTime } from 'packages/pure/utils'
 
@@ -6,14 +6,12 @@ import { getReadingTime } from 'packages/pure/utils'
 const isPreview = import.meta.env.VERCEL_ENV === 'preview' || import.meta.env.DEV
 
 // 2. Configure the client dynamically
-export const sanityClient = createClient({
-  projectId: import.meta.env.PUBLIC_SANITY_PROJECT_ID, // Replace with your actual Sanity Project ID
-  dataset: "production",
-  apiVersion: "2026-06-08",
-  useCdn: !isPreview, // Use CDN for fast prod builds; bypass CDN on preview for real-time edits
-  // Provide token ONLY in preview mode so production can never accidentally read drafts
-  token: isPreview ? import.meta.env.SANITY_API_TOKEN : undefined, 
-})
+export const sanityClient = isPreview
+  ? baseClient.withConfig({
+      useCdn: false, // Bypass CDN to see edits instantly
+      token: import.meta.env.SANITY_API_TOKEN, // Safely append your secret draft token
+    })
+  : baseClient
 
 const builder = createImageUrlBuilder(sanityClient)
 
