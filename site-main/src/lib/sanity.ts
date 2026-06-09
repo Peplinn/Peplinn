@@ -153,7 +153,7 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
     })
   }
 
-  return posts.map((post: any) => {
+  const mappedPosts = posts.map((post: any) => {
     const rawMarkdown = post.content || post.body || ""
     const readStats = getReadingTime(rawMarkdown)
     const isDraftDocument = post._id.startsWith('drafts.')
@@ -167,7 +167,7 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
         title: post.title,
         description: post.description || '',
         comment: false,
-        draft: isDraftDocument, // Properly flags it as a draft in Astro
+        draft: isDraftDocument,
         publishDate: new Date(post.publishedAt || post._updatedAt),
         tags: post.tags || [],
         minutesRead: readStats.text,
@@ -176,6 +176,10 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
       }
     }
   })
+
+  return mappedPosts.sort(
+    (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+  )
 }
 
 export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {

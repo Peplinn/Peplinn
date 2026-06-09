@@ -16,12 +16,7 @@ import { getSanityProjects } from '../lib/sanity'
 const projects = await getSanityProjects()
 
 // const MAX_POSTS = 10
-const allPosts = await getSanityPosts()
-const allPostsByDate = [...allPosts].sort(
-  (a, b) =>
-    new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
-    new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
-)
+const allPostsByDate = await getSanityPosts()
 ---
 
 <PageLayout meta={{ title: 'Home' }}>
