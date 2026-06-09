@@ -1,6 +1,19 @@
-import { sanityClient } from 'sanity:client'
+import { createClient } from '@sanity/client' // Switch to explicit creation for flexible config
 import createImageUrlBuilder from "@sanity/image-url"
 import { getReadingTime } from 'packages/pure/utils'
+
+// 1. Determine if we are on Vercel's preview/test server or local development
+const isPreview = import.meta.env.VERCEL_ENV === 'preview' || import.meta.env.DEV
+
+// 2. Configure the client dynamically
+export const sanityClient = createClient({
+  projectId: "YOUR_PROJECT_ID", // Replace with your actual Sanity Project ID
+  dataset: "production",
+  apiVersion: "2026-06-08",
+  useCdn: !isPreview, // Use CDN for fast prod builds; bypass CDN on preview for real-time edits
+  // Provide token ONLY in preview mode so production can never accidentally read drafts
+  token: isPreview ? import.meta.env.SANITY_API_TOKEN : undefined, 
+})
 
 const builder = createImageUrlBuilder(sanityClient)
 
@@ -97,29 +110,55 @@ function mapHeroImage(source: any, alt: string, width: number) {
   }
 }
 
+// 3. Updated fetcher function with Foolproof Preview Logic
 export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
-  const query = `*[_type == "blogPost"] | order(publishedAt desc) {
-    _id,
-    publishedAt,
-    title,
-    description,
-    "slug": slug.current,
-    tags,
-    heroImage {
-      ...,
-      asset-> {
+  // If preview, look for drafts and group by slug. If production, completely filter out drafts.
+  const query = isPreview 
+    ? `*[_type == "blogPost"] | order(_updatedAt desc) {
         _id,
-        metadata { dimensions }
-      }
-    },
-    content
-  }`
+        publishedAt,
+        _updatedAt,
+        title,
+        description,
+        "slug": slug.current,
+        tags,
+        heroImage {
+          ...,
+          asset-> { _id, metadata { dimensions } }
+        },
+        content
+      }`
+    : `*[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
+        _id,
+        publishedAt,
+        title,
+        description,
+        "slug": slug.current,
+        tags,
+        heroImage {
+          ...,
+          asset-> { _id, metadata { dimensions } }
+        },
+        content
+      }`
 
-  const posts = await sanityClient.fetch(query)
+  const rawPosts = await sanityClient.fetch(query)
+  
+  // Deduplicate drafts for the Preview environment
+  let posts = rawPosts
+  if (isPreview) {
+    const seen = new Set()
+    posts = rawPosts.filter((post: any) => {
+      if (seen.has(post.slug)) return false
+      seen.add(post.slug)
+      return true
+    })
+  }
 
   return posts.map((post: any) => {
     const rawMarkdown = post.content || post.body || ""
     const readStats = getReadingTime(rawMarkdown)
+    const isDraftDocument = post._id.startsWith('drafts.')
 
     return {
       id: post.slug,
@@ -130,13 +169,11 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
         title: post.title,
         description: post.description || '',
         comment: false,
-        draft: false,
-        publishDate: new Date(post.publishedAt),
+        draft: isDraftDocument, // Properly flags it as a draft in Astro
+        publishDate: new Date(post.publishedAt || post._updatedAt),
         tags: post.tags || [],
         minutesRead: readStats.text,
-        // 900px for full post hero (content column is max ~900px wide)
         heroImage: mapHeroImage(post.heroImage, post.title, 900),
-        // 400px for card thumbnail (w-3/5 of a half-width card)
         coverImage: mapHeroImage(post.heroImage, post.title, 400),
       }
     }
