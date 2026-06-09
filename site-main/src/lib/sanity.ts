@@ -7,7 +7,7 @@ const isPreview = import.meta.env.VERCEL_ENV === 'preview' || import.meta.env.DE
 
 // 2. Configure the client dynamically
 export const sanityClient = createClient({
-  projectId: "YOUR_PROJECT_ID", // Replace with your actual Sanity Project ID
+  projectId: import.meta.env.PUBLIC_SANITY_PROJECT_ID, // Replace with your actual Sanity Project ID
   dataset: "production",
   apiVersion: "2026-06-08",
   useCdn: !isPreview, // Use CDN for fast prod builds; bypass CDN on preview for real-time edits
