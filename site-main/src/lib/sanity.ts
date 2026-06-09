@@ -178,7 +178,8 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   })
 
   return mappedPosts.sort(
-    (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime()
+  (a: WritingCollectionPost, b: WritingCollectionPost) => 
+      b.data.publishDate.getTime() - a.data.publishDate.getTime()
   )
 }
 
