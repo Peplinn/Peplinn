@@ -16,4 +16,28 @@ export default defineConfig({
   schema: {
     types: schemaTypes,
   },
+
+  document: {
+    productionUrl: async (prev, context) => {
+      const { document } = context
+      
+      // Safely check if the document exists and has a valid slug populated
+      const slug = (document?.slug as any)?.current
+      if (!slug) return prev
+
+      // Smart environment switching:
+      // If you are running Sanity Studio locally, it points to localhost Astro.
+      // Otherwise, it points to your live deployment.
+      const baseUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:4321'
+        : 'https://ebubeoluoma.com' 
+
+      // If you are writing a post, redirect it to your new dynamic Astro preview route
+      if (document._type === 'post') {
+        return `${baseUrl}/preview/${slug}`
+      }
+
+      return prev
+    },
+  },
 })
