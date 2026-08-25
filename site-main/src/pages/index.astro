@@ -12,6 +12,11 @@ import portrait from '@/assets/portrait.jpg'
 import config from '@/site-config'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
 import { getSanityProjects } from '../lib/sanity'
+import { noStore } from '../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
 
 const projects = await getSanityProjects()
 

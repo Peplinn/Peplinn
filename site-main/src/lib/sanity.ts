@@ -1,19 +1,48 @@
-import { sanityClient as baseClient } from 'sanity:client' // Switch to explicit creation for flexible config
-import createImageUrlBuilder from "@sanity/image-url"
+import { sanityClient as baseClient } from 'sanity:client'
+import createImageUrlBuilder from '@sanity/image-url'
 import { getReadingTime } from 'packages/pure/utils'
 
-// 1. Determine if we are on Vercel's preview/test server or local development
-const isPreview = import.meta.env.VERCEL_ENV === 'preview' || import.meta.env.DEV
+/**
+ * Read an env var at *request* time.
+ *
+ * `import.meta.env` is inlined by Vite when the bundle is built, so on its own it
+ * bakes build-time values into the serverless function. `process.env` is what the
+ * function actually sees when a request comes in; `import.meta.env` stays as the
+ * fallback for `astro build` and `astro dev`.
+ */
+function readEnv(key: string): string | undefined {
+  const fromProcess = typeof process !== 'undefined' ? process.env?.[key] : undefined
+  return fromProcess ?? (import.meta.env as Record<string, string | undefined>)[key]
+}
 
-// 2. Configure the client dynamically
-export const sanityClient = isPreview
-  ? baseClient.withConfig({
-      useCdn: false, // Bypass CDN to see edits instantly
-      token: import.meta.env.SANITY_API_TOKEN, // Safely append your secret draft token
-    })
-  : baseClient
+/**
+ * Drafts are visible on Vercel preview deployments and in local dev, never on the
+ * production domain. Evaluated per call so the deployment environment is read at
+ * runtime rather than frozen into the build.
+ */
+export function isDraftMode(): boolean {
+  return readEnv('VERCEL_ENV') === 'preview' || import.meta.env.DEV
+}
 
-const builder = createImageUrlBuilder(sanityClient)
+/**
+ * Draft mode bypasses the Sanity CDN entirely and authenticates, so unpublished
+ * edits show up on the very next request. Production reads through the CDN, which
+ * Sanity purges on publish - fresh within seconds, without paying an uncached API
+ * round trip per page view.
+ */
+function getClient() {
+  return isDraftMode()
+    ? baseClient.withConfig({
+        useCdn: false,
+        token: readEnv('SANITY_API_TOKEN')
+      })
+    : baseClient.withConfig({ useCdn: true })
+}
+
+export const sanityClient = getClient()
+
+// Image URLs only need projectId/dataset, so build them off the untokened client.
+const builder = createImageUrlBuilder(baseClient)
 
 export function urlFor(source: any) {
   return builder.image(source)
@@ -56,7 +85,7 @@ export type WritingCollectionPost = {
     minutesRead: string
     updatedDate?: Date
     coverImage?: {
-      src: { src: string; width: number; height: number; format: 'webp' }
+      src: string
       alt: string
       color?: string
       width?: number
@@ -64,7 +93,7 @@ export type WritingCollectionPost = {
       inferSize?: boolean
     }
     heroImage?: {
-      src: { src: string; width: number; height: number; format: 'webp' }
+      src: string
       alt: string
       color?: string
       width?: number
@@ -108,43 +137,59 @@ function mapHeroImage(source: any, alt: string, width: number) {
   }
 }
 
-// 3. Updated fetcher function with Foolproof Preview Logic
-export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
-  // If preview, look for drafts and group by slug. If production, completely filter out drafts.
-  const query = isPreview 
-    ? `*[_type == "blogPost"] | order(_updatedAt desc) {
-        _id,
-        publishedAt,
-        _updatedAt,
-        title,
-        description,
-        "slug": slug.current,
-        tags,
-        heroImage {
-          ...,
-          asset-> { _id, metadata { dimensions } }
-        },
-        content
-      }`
-    : `*[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) {
-        _id,
-        publishedAt,
-        title,
-        description,
-        "slug": slug.current,
-        tags,
-        heroImage {
-          ...,
-          asset-> { _id, metadata { dimensions } }
-        },
-        content
-      }`
+const POST_PROJECTION = `
+  _id,
+  publishedAt,
+  _updatedAt,
+  title,
+  description,
+  "slug": slug.current,
+  tags,
+  heroImage {
+    ...,
+    asset-> { _id, metadata { dimensions } }
+  },
+  content
+`
 
-  const rawPosts = await sanityClient.fetch(query)
-  
-  // Deduplicate drafts for the Preview environment
+function mapPost(post: any): WritingCollectionPost {
+  const rawMarkdown = post.content || post.body || ''
+  const readStats = getReadingTime(rawMarkdown)
+  const isDraftDocument = post._id.startsWith('drafts.')
+
+  return {
+    id: post.slug,
+    slug: post.slug,
+    body: rawMarkdown,
+    collection: 'writing',
+    data: {
+      title: post.title,
+      description: post.description || '',
+      comment: false,
+      draft: isDraftDocument,
+      publishDate: new Date(post.publishedAt || post._updatedAt),
+      tags: post.tags || [],
+      minutesRead: readStats.text,
+      heroImage: mapHeroImage(post.heroImage, post.title, 900),
+      coverImage: mapHeroImage(post.heroImage, post.title, 400),
+    }
+  }
+}
+
+export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
+  const draftMode = isDraftMode()
+
+  // In draft mode a slug can come back twice - once as `drafts.<id>`, once as the
+  // published document. Ordering by `_updatedAt` puts the draft first, and the
+  // dedupe below keeps it. Production filters drafts out at the query.
+  const query = draftMode
+    ? `*[_type == "blogPost"] | order(_updatedAt desc) { ${POST_PROJECTION} }`
+    : `*[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) { ${POST_PROJECTION} }`
+
+  const rawPosts = await getClient().fetch(query)
+
   let posts = rawPosts
-  if (isPreview) {
+  if (draftMode) {
     const seen = new Set()
     posts = rawPosts.filter((post: any) => {
       if (seen.has(post.slug)) return false
@@ -153,34 +198,12 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
     })
   }
 
-  const mappedPosts = posts.map((post: any) => {
-    const rawMarkdown = post.content || post.body || ""
-    const readStats = getReadingTime(rawMarkdown)
-    const isDraftDocument = post._id.startsWith('drafts.')
-
-    return {
-      id: post.slug,
-      slug: post.slug,
-      body: rawMarkdown,
-      collection: 'writing',
-      data: {
-        title: post.title,
-        description: post.description || '',
-        comment: false,
-        draft: isDraftDocument,
-        publishDate: new Date(post.publishedAt || post._updatedAt),
-        tags: post.tags || [],
-        minutesRead: readStats.text,
-        heroImage: mapHeroImage(post.heroImage, post.title, 900),
-        coverImage: mapHeroImage(post.heroImage, post.title, 400),
-      }
-    }
-  })
-
-  return mappedPosts.sort(
-  (a: WritingCollectionPost, b: WritingCollectionPost) => 
-      b.data.publishDate.getTime() - a.data.publishDate.getTime()
-  )
+  return posts
+    .map(mapPost)
+    .sort(
+      (a: WritingCollectionPost, b: WritingCollectionPost) =>
+        b.data.publishDate.getTime() - a.data.publishDate.getTime()
+    )
 }
 
 export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
@@ -204,7 +227,7 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
     }
   }`
 
-  const projects = await sanityClient.fetch(query)
+  const projects = await getClient().fetch(query)
 
   return projects.map((project: any) => {
     const dim = project.image?.asset?.metadata?.dimensions

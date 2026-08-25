@@ -12,6 +12,9 @@ noStore(Astro.response.headers)
 
 const { id } = Astro.params
 
+// Pagination used to live at /writing/2 before it moved under /writing/page/2.
+if (id && /^\d+$/.test(id)) return Astro.redirect(`/writing/page/${id}`, 301)
+
 const posts: WritingCollectionPost[] = await getSanityPosts()
 const post = posts.find((p) => p.slug === id)
 

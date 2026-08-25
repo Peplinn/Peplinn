@@ -1,0 +1,21 @@
+---
+import WritingList from '@/components/writing/WritingList.astro'
+import config from '@/site-config'
+import { getSanityPosts } from '../../lib/sanity'
+import { noStore, paginate } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
+
+const collections = await getSanityPosts()
+const uniqueTags = [...new Set(collections.flatMap((post) => post.data.tags))] as string[]
+
+const page = paginate(collections, {
+  baseUrl: '/writing',
+  pageSegment: 'page',
+  pageSize: config.content.blogPageSize
+})!
+---
+
+<WritingList {page} {uniqueTags} collectionsCount={collections.length} />

@@ -4,6 +4,11 @@ import { getSanityPosts } from '../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import { cn } from 'astro-pure/utils'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
 
 const allPosts = await getSanityPosts()
 const allTags = getSanityTagsWithCount(allPosts)

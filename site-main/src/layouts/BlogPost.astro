@@ -1,6 +1,7 @@
 ---
 import type { MarkdownHeading } from 'astro'
-import type { CollectionEntry } from 'astro:content'
+
+import type { WritingCollectionPost } from '../lib/sanity'
 
 // Plugin styles
 import 'katex/dist/katex.min.css'
@@ -11,8 +12,8 @@ import PageLayout from '@/layouts/ContentLayout.astro'
 import { integ } from '@/site-config'
 
 interface Props {
-  post: CollectionEntry<'writing'>
-  posts: CollectionEntry<'writing'>[]
+  post: WritingCollectionPost
+  posts: WritingCollectionPost[]
   headings: MarkdownHeading[]
   remarkPluginFrontmatter: Record<string, unknown>
 }
@@ -32,11 +33,8 @@ const {
   updatedDate,
 } = data
 
-const socialImage = heroImage
-  ? typeof heroImage.src === 'string'
-    ? heroImage.src
-    : heroImage.src.src
-  : '/images/social-card.png'
+// Sanity hero images are already CDN URLs, not imported image assets.
+const socialImage = heroImage?.src ?? '/images/social-card.png'
 const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString()
 const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-text-opacity))'
 ---
@@ -48,7 +46,7 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
 >
   {!!headings.length && <TOC {headings} slot='sidebar' />}
 
-  <Hero {data} {remarkPluginFrontmatter} slot='header'>
+  <Hero data={data as any} {remarkPluginFrontmatter} slot='header'>
     <Fragment slot='description'>
     </Fragment>
   </Hero>
@@ -59,7 +57,7 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
     {/* Article recommend */}
     <ArticleBottom collections={posts} {id} class='mb-3 sm:mb-6' />
     {/* Copyright */}
-    <Copyright {data} />
+    <Copyright data={data as any} />
     
   </Fragment>
 
