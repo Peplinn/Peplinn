@@ -125,11 +125,37 @@ export type ProjectCollectionItem = {
   }
 }
 
+/**
+ * Drafts skip the schema's `required()` rules, so a work-in-progress post can be
+ * missing `publishedAt` entirely. `FormattedDate` calls `.toISOString()` and
+ * `getFormattedDate` calls `Intl.format()` on this value - both throw RangeError on
+ * an Invalid Date and turn the whole page into a 500. Always hand back a real Date.
+ */
+function toValidDate(...candidates: unknown[]): Date {
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    const date = new Date(candidate as string)
+    if (!Number.isNaN(date.getTime())) return date
+  }
+  return new Date()
+}
+
 function mapHeroImage(source: any, alt: string, width: number) {
   if (!source?.asset) return undefined
   const dim = source.asset?.metadata?.dimensions
+
+  // A draft can reference an asset that no longer resolves (image removed mid-edit),
+  // and the URL builder throws rather than returning null. One broken image should
+  // not cost the reader the entire post.
+  let src: string
+  try {
+    src = sanityImageUrl(source, width)
+  } catch {
+    return undefined
+  }
+
   return {
-    src: sanityImageUrl(source, width),
+    src,
     alt: source.alt ?? alt,
     width: dim?.width ?? width,
     height: dim?.height ?? 800,
@@ -141,6 +167,7 @@ const POST_PROJECTION = `
   _id,
   publishedAt,
   _updatedAt,
+  _createdAt,
   title,
   description,
   "slug": slug.current,
@@ -167,7 +194,7 @@ function mapPost(post: any): WritingCollectionPost {
       description: post.description || '',
       comment: false,
       draft: isDraftDocument,
-      publishDate: new Date(post.publishedAt || post._updatedAt),
+      publishDate: toValidDate(post.publishedAt, post._updatedAt, post._createdAt),
       tags: post.tags || [],
       minutesRead: readStats.text,
       heroImage: mapHeroImage(post.heroImage, post.title, 900),

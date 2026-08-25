@@ -98,30 +98,38 @@ function codeRenderer(hl: Highlighter) {
   }
 }
 
-// One configured instance, built once. Calling `marked.use()` per render stacks a
-// fresh copy of every extension onto the shared singleton on each request.
-let markedPromise: Promise<Marked> | null = null
-
-function getMarked() {
-  markedPromise ??= getHighlighter().then((hl) => {
-    const instance = new Marked()
-    instance.use({ renderer: { code: codeRenderer(hl) } })
-    instance.use(markedKatex({ throwOnError: false }))
-    instance.use(gfmHeadingId())
-    instance.use(markedFootnote())
-    return instance
-  })
-  return markedPromise
+/**
+ * A fresh `Marked` for every call - deliberately NOT shared.
+ *
+ * `marked-footnote` keeps mutable state (`hasFootnotes`) alongside its extensions
+ * and only clears it from `walkTokens`, which runs during `parse()` but not during
+ * `lexer()`. A shared instance therefore leaves that flag set after any `lexer()`
+ * call, and the next `parse()` of a document containing `[^ref]` skips pushing the
+ * footnotes container - so the inline tokenizer reads `tokens[0].rawItems` off a
+ * paragraph and throws `Cannot read properties of undefined (reading 'filter')`.
+ * Sharing one instance across concurrent requests would interleave that state too.
+ *
+ * Constructing this is cheap; the expensive part is the highlighter, which stays
+ * memoized above.
+ */
+async function createMarked() {
+  const hl = await getHighlighter()
+  const instance = new Marked()
+  instance.use({ renderer: { code: codeRenderer(hl) } })
+  instance.use(markedKatex({ throwOnError: false }))
+  instance.use(gfmHeadingId())
+  instance.use(markedFootnote())
+  return instance
 }
 
 export async function renderMarkdown(markdown: string) {
-  const instance = await getMarked()
+  const instance = await createMarked()
   return instance.parse(markdown || '')
 }
 
 /** Headings for the sidebar TOC, slugged to match `gfmHeadingId`'s anchors. */
 export async function extractHeadings(markdown: string) {
-  const instance = await getMarked()
+  const instance = await createMarked()
   const slugger = new GithubSlugger()
   return instance
     .lexer(markdown || '')
