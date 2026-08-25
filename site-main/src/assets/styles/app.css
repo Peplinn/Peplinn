@@ -12,8 +12,19 @@
   font-display: swap;
 }
 html {
-  font-family: 'Satoshi', sans-serif;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 16.5px;
+}
+
+/* Headings and UI chrome keep a distinct display face. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 /* Theme */

@@ -285,3 +285,128 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
     }
   })
 }
+
+export type AboutPage = {
+  heading: string
+  body: string
+  bookshelfHeading?: string
+  bookshelfIntro?: string
+}
+
+export type NowSection = {
+  heading: string
+  body: string
+  updatedAt?: Date
+}
+
+export type Book = {
+  id: string
+  title: string
+  author?: string
+  status: 'reading' | 'finished' | 'want'
+  note?: string
+  link?: string
+  finishedAt?: Date
+  coverImage?: { src: string; alt: string; width: number; height: number }
+}
+
+export type TilEntry = {
+  id: string
+  slug: string
+  title: string
+  content: string
+  publishDate: Date
+  tags: string[]
+}
+
+/**
+ * Singletons are fetched by type rather than by a fixed `_id`: ordering by
+ * `_updatedAt` means draft mode naturally sees the draft, while production filters
+ * drafts out at the query - the same rule the posts use.
+ */
+async function fetchSingleton(type: string, projection: string) {
+  const filter = isDraftMode()
+    ? `*[_type == "${type}"]`
+    : `*[_type == "${type}" && !(_id in path("drafts.**"))]`
+  return getClient().fetch(`${filter} | order(_updatedAt desc)[0] { ${projection} }`)
+}
+
+export async function getAboutPage(): Promise<AboutPage | null> {
+  const doc = await fetchSingleton('aboutPage', 'heading, body, bookshelfHeading, bookshelfIntro')
+  if (!doc) return null
+  return {
+    heading: doc.heading || 'About',
+    body: doc.body || '',
+    bookshelfHeading: doc.bookshelfHeading || undefined,
+    bookshelfIntro: doc.bookshelfIntro || undefined
+  }
+}
+
+export async function getNowSection(): Promise<NowSection | null> {
+  const doc = await fetchSingleton('nowPage', 'heading, body, updatedAt, _updatedAt')
+  if (!doc) return null
+  return {
+    heading: doc.heading || 'Now',
+    body: doc.body || '',
+    updatedAt: doc.updatedAt ? toValidDate(doc.updatedAt, doc._updatedAt) : undefined
+  }
+}
+
+export async function getBooks(): Promise<Book[]> {
+  const filter = isDraftMode()
+    ? `*[_type == "book"]`
+    : `*[_type == "book" && !(_id in path("drafts.**"))]`
+
+  const books = await getClient().fetch(`${filter} | order(coalesce(finishedAt, _createdAt) desc) {
+    _id,
+    title,
+    author,
+    status,
+    note,
+    link,
+    finishedAt,
+    coverImage { ..., asset-> { _id, metadata { dimensions } } }
+  }`)
+
+  return books.map((b: any) => ({
+    id: b._id,
+    title: b.title,
+    author: b.author,
+    status: b.status ?? 'reading',
+    note: b.note,
+    link: b.link,
+    finishedAt: b.finishedAt ? toValidDate(b.finishedAt) : undefined,
+    coverImage: mapHeroImage(b.coverImage, b.title, 160)
+  }))
+}
+
+/** Newest TILs first. `limit` caps how many the timeline renders. */
+export async function getTils(limit?: number): Promise<TilEntry[]> {
+  const filter = isDraftMode()
+    ? `*[_type == "til"]`
+    : `*[_type == "til" && !(_id in path("drafts.**"))]`
+  const slice = limit ? `[0...${limit}]` : ''
+
+  const entries = await getClient().fetch(
+    `${filter} | order(publishedAt desc)${slice} {
+      _id, title, content, publishedAt, _updatedAt, _createdAt, tags
+    }`
+  )
+
+  return entries.map((t: any) => ({
+    id: t._id,
+    slug: t._id.replace(/^drafts\./, ''),
+    title: t.title,
+    content: t.content || '',
+    publishDate: toValidDate(t.publishedAt, t._updatedAt, t._createdAt),
+    tags: t.tags || []
+  }))
+}
+
+/** Total TIL count, so the timeline can say how many are hidden. */
+export async function getTilCount(): Promise<number> {
+  const filter = isDraftMode()
+    ? `*[_type == "til"]`
+    : `*[_type == "til" && !(_id in path("drafts.**"))]`
+  return getClient().fetch(`count(${filter})`)
+}

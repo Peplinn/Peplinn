@@ -1,7 +1,8 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {visionTool} from '@sanity/vision'
-import {schemaTypes} from './schemaTypes'
+import {schemaTypes, singletonTypes} from './schemaTypes'
+import {structure} from './structure'
 import { markdownSchema } from 'sanity-plugin-markdown'
 
 export default defineConfig({
@@ -11,10 +12,11 @@ export default defineConfig({
   projectId: 'yry247aj',
   dataset: 'production',
 
-  plugins: [structureTool(), visionTool(), markdownSchema()],
+  plugins: [structureTool({structure}), visionTool(), markdownSchema()],
 
   schema: {
     types: schemaTypes,
+    templates: prev => prev.filter(t => !singletonTypes.includes(t.schemaType)),
   },
 
   document: {
@@ -33,7 +35,7 @@ export default defineConfig({
         : 'https://ebubeoluoma.com' 
 
       // If you are writing a post, redirect it to your new dynamic Astro preview route
-      if (document._type === 'post') {
+      if (document._type === 'blogPost') {
         return `${baseUrl}/preview/${slug}`
       }
 

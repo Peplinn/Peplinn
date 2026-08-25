@@ -60,6 +60,10 @@ const {
         ) !important;
       }
     </style>
-    <script src="/src/scripts/code-copy.ts" type="module"></script>
+    <script>
+      // Imported rather than referenced by absolute path: `src="/src/..."` is treated
+      // as an external URL, so it is never bundled and 404s in production.
+      import '../scripts/code-copy'
+    </script>
   </body>
 </html>
