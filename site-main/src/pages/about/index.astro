@@ -2,7 +2,7 @@
 import { Icon } from 'astro-pure/user'
 import { Image } from 'astro:assets'
 import PageLayout from '@/layouts/CommonPage.astro'
-import config from 'virtual:config'
+import config from '@/site-config'
 
 import { getAboutPage, getBooks, getNowSection, type Book } from '../../lib/sanity'
 import { renderMarkdown } from '../../lib/markdown'
@@ -13,6 +13,12 @@ export const prerender = false
 noStore(Astro.response.headers)
 
 const footerConf = config.footer
+const SOCIAL_LABELS: Record<string, string> = {
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  email: 'Email'
+}
+
 const social = footerConf.social || {}
 
 const [about, now, books] = await Promise.all([getAboutPage(), getNowSection(), getBooks()])
@@ -61,11 +67,11 @@ const nowUpdated = now?.updatedAt
     {
       Object.entries(social)
         .filter(([platform]) => ['github', 'linkedin', 'email'].includes(platform))
-        .map(([platform, { label, url }]) => (
+        .map(([platform, url]) => (
           <a
-            class='inline-block text-muted-foreground transition-all hover:text-muted-foreground/75'
-            href={url}
-            aria-label={label}
+            class='inline-block text-muted-foreground transition-all hover:text-primary'
+            href={url as string}
+            aria-label={SOCIAL_LABELS[platform] ?? platform}
           >
             <Icon name={platform as keyof typeof social} />
           </a>

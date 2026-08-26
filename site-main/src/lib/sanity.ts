@@ -172,12 +172,27 @@ const POST_PROJECTION = `
   description,
   "slug": slug.current,
   tags,
+  "tagTitles": tags[]->title,
   heroImage {
     ...,
     asset-> { _id, metadata { dimensions } }
   },
   content
 `
+
+/**
+ * Tags moved from free-text strings to references to `tag` documents. Posts written
+ * before that change still carry plain strings, so accept either: dereferenced
+ * titles win, and anything still stored as a string is passed through.
+ */
+function normalizeTags(post: any): string[] {
+  const isString = (t: unknown): t is string => typeof t === 'string' && t.length > 0
+
+  const resolved = Array.isArray(post.tagTitles) ? post.tagTitles.filter(isString) : []
+  if (resolved.length) return resolved
+
+  return Array.isArray(post.tags) ? post.tags.filter(isString) : []
+}
 
 function mapPost(post: any): WritingCollectionPost {
   const rawMarkdown = post.content || post.body || ''
@@ -195,7 +210,7 @@ function mapPost(post: any): WritingCollectionPost {
       comment: false,
       draft: isDraftDocument,
       publishDate: toValidDate(post.publishedAt, post._updatedAt, post._createdAt),
-      tags: post.tags || [],
+      tags: normalizeTags(post),
       minutesRead: readStats.text,
       heroImage: mapHeroImage(post.heroImage, post.title, 900),
       coverImage: mapHeroImage(post.heroImage, post.title, 400),

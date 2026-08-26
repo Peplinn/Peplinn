@@ -16,13 +16,17 @@ html {
   font-size: 16.5px;
 }
 
-/* Headings and UI chrome keep a distinct display face. */
+/* Headings and UI chrome keep a distinct display face; body copy stays IBM Plex Sans. */
 h1,
 h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+header a,
+header button,
+footer a,
+.font-display {
   font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }

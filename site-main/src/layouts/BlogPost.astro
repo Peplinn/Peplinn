@@ -1,6 +1,8 @@
 ---
 import type { MarkdownHeading } from 'astro'
 
+import config from '@/site-config'
+
 import type { WritingCollectionPost } from '../lib/sanity'
 
 // Plugin styles
@@ -37,6 +39,13 @@ const {
 const socialImage = heroImage?.src ?? '/images/social-card.png'
 const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString()
 const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-text-opacity))'
+
+// Feedback link: prefill the subject with the article title so replies are easy to
+// place. `email` is already a `mailto:` URL, so only the query string is appended.
+const contactUrl = config.footer.social?.email
+const feedbackHref = contactUrl
+  ? `${contactUrl}?subject=${encodeURIComponent(`Feedback on "${title}"`)}`
+  : undefined
 ---
 
 <PageLayout
@@ -54,6 +63,22 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
   <slot />
 
   <Fragment slot='bottom'>
+    {/* Feedback */}
+    {
+      feedbackHref && (
+        <aside class='mb-6 rounded-xl border bg-muted/40 px-5 py-4'>
+          <h2 class='text-base font-medium'>Spotted something?</h2>
+          <p class='mt-1 text-sm text-muted-foreground'>
+            Corrections, disagreements and follow-up questions are all welcome.
+            <a class='ms-1 underline underline-offset-4 hover:text-primary' href={feedbackHref}>
+              Send me a note
+            </a>
+            .
+          </p>
+        </aside>
+      )
+    }
+
     {/* Article recommend */}
     <ArticleBottom collections={posts} {id} class='mb-3 sm:mb-6' />
     {/* Copyright */}
