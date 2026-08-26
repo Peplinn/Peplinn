@@ -23,10 +23,18 @@ h3,
 h4,
 h5,
 h6,
-header a,
-header button,
-footer a,
 .font-display {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Site chrome: brand name, nav links, buttons, footer.
+   Set on the containers so every descendant inherits, rather than listing each
+   child selector. Note the header renders as the custom element
+   <header-component>, not <header> - a bare `header` selector matches nothing. */
+header,
+header-component,
+footer {
   font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
