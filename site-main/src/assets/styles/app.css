@@ -90,6 +90,19 @@ a {
   }
 }
 
+/* Footnote jumps.
+   marked-footnote emits `id="footnote-<label>"` on each note in the list and
+   `id="footnote-ref-<label>"` on the superscript that references it, so this one
+   prefix covers both directions: clicking a reference to reach the note, and the
+   back-arrow to return to the reference.
+   Without this the target lands flush against the top of the viewport (partly
+   under the sticky header). The offset drops it into the upper-middle of the
+   screen instead, so the surrounding sentence stays visible. Tune the value to
+   taste - larger pushes the target further down. */
+[id^='footnote-'] {
+  scroll-margin-top: 40vh;
+}
+
 .prose :where(:not(pre) > code):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
   color: hsl(var(--foreground)) !important;
   background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
