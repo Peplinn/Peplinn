@@ -1,40 +1,37 @@
 ---
-import type { GetStaticPaths, Page } from 'astro'
+import type { Page } from 'astro'
 import type { WritingCollectionPost } from '../../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
-import { getSanityTags } from '../../../lib/sanity-helpers'
 import { getSanityPosts } from '../../../lib/sanity'
+import { noStore, paginate } from '../../../lib/ssr'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import config from '@/site-config'
 
-export const prerender = true
+export const prerender = false
 
-export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
-  const allPosts = await getSanityPosts()
-  const allPostsByDate = [...allPosts].sort(
-    (a, b) =>
-      new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
-      new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
-  )
-  const uniqueTags = getSanityTags(allPostsByDate)
+noStore(Astro.response.headers)
 
-  return uniqueTags.flatMap((tag) => {
-    const filterPosts = allPostsByDate.filter((post) => post.data.tags.includes(tag))
-    return paginate(filterPosts, {
-      pageSize: config.content.blogPageSize,
-      params: { tag }
-    })
-  })
-}
-
-interface Props {
-  page: Page<WritingCollectionPost>
-}
-
-const { page } = Astro.props
 const { tag } = Astro.params
+
+const allPosts = await getSanityPosts()
+const allPostsByDate = [...allPosts].sort(
+  (a, b) =>
+    new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
+    new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
+)
+
+const filterPosts = allPostsByDate.filter((post) => post.data.tags.includes(tag!))
+if (filterPosts.length === 0) return Astro.redirect('/tags')
+
+const page: Page<WritingCollectionPost> | null = paginate(filterPosts, {
+  pageParam: Astro.params.page,
+  baseUrl: `/tags/${tag}`,
+  pageSize: config.content.blogPageSize
+})
+
+if (!page) return Astro.redirect(`/tags/${tag}`)
 
 const meta = {
   description: `View all posts with the tag - ${tag}`,

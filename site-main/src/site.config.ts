@@ -49,6 +49,7 @@ export const theme: ThemeUserConfig = {
     menu: [
       { title: 'Projects', link: '/projects' },
       { title: 'Writing', link: '/writing' },
+      { title: 'TIL', link: '/til' },
       // { title: 'Visualizations', link: '/visualizations' },
       { title: 'About', link: '/about' }
     ]
@@ -128,7 +129,7 @@ export const integ: IntegrationUserConfig = {
   // UnoCSS typography
   // See: https://unocss.dev/presets/typography
   typography: {
-    class: 'prose text-base text-muted-foreground',
+    class: 'prose text-base text-foreground',
     // The style of blockquote font, normal or italic (default to italic in typography)
     blockquoteStyle: 'italic',
     // The style of inline code block, code or modern (default to code in typography)

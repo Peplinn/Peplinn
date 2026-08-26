@@ -10,6 +10,11 @@ import alipay from '@/assets/alipay-qrcode.jpg'
 import KeyIcon from '@/assets/icons/key.svg'
 import wechat from '@/assets/wechat-qrcode.jpg'
 import { getSanityProjects } from '../../lib/sanity'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
 
 const projects = await getSanityProjects()
 

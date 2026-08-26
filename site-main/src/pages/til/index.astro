@@ -1,0 +1,109 @@
+---
+import { Button, FormattedDate } from 'astro-pure/user'
+import PageLayout from '@/layouts/BaseLayout.astro'
+
+import { getTilCount, getTils } from '../../lib/sanity'
+import { renderMarkdown } from '../../lib/markdown'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
+
+const DEFAULT_LIMIT = 10
+
+// `?all` expands the timeline. The page is rendered on demand, so this needs no
+// extra route - just a different slice of the same query.
+const showAll = Astro.url.searchParams.has('all')
+
+const [entries, total] = await Promise.all([
+  getTils(showAll ? undefined : DEFAULT_LIMIT),
+  getTilCount()
+])
+
+const rendered = await Promise.all(
+  entries.map(async (entry) => ({ ...entry, html: await renderMarkdown(entry.content) }))
+)
+
+const hasMore = !showAll && total > entries.length
+
+const meta = {
+  description: 'Short notes on things I have learned.',
+  title: 'TIL'
+}
+---
+
+<PageLayout {meta}>
+  <Button title='Home' href='/' variant='back' />
+
+  <main class='mt-6 lg:mt-10'>
+    <div id='content-header' class='animate'>
+      <h1 class='mb-2 text-3xl font-medium'>TIL</h1>
+      <p class='mb-8 text-muted-foreground'>
+        Short notes on things I&rsquo;ve learned.
+        {total > 0 && <span>{showAll ? `All ${total}.` : `Showing ${entries.length} of ${total}.`}</span>}
+      </p>
+    </div>
+
+    <section id='content' class='animate' aria-label='TIL timeline'>
+      {
+        rendered.length === 0 ? (
+          <p class='text-muted-foreground'>Nothing here yet.</p>
+        ) : (
+          <ol class={`til-timeline ${hasMore ? 'has-more' : ''}`}>
+            {rendered.map((entry) => (
+              <li class='til-entry relative border-s border-border ps-6 pb-10 last:pb-0'>
+                {/* timeline node */}
+                <span
+                  class='absolute -start-[5px] top-1.5 size-[9px] rounded-full border-2 border-background bg-muted-foreground'
+                  aria-hidden='true'
+                />
+                <FormattedDate
+                  class='text-xs uppercase tracking-wide'
+                  date={entry.publishDate}
+                />
+                <h2 class='mt-1 text-lg font-medium'>{entry.title}</h2>
+                <div class='prose prose-pure dark:prose-invert mt-2 max-w-none text-base'>
+                  <div set:html={entry.html} />
+                </div>
+                {/* Plain labels, not links: /tags/<tag> lists blog posts, so a
+                    TIL-only tag would dead-end there. */}
+                {!!entry.tags.length && (
+                  <ul class='mt-3 flex flex-wrap gap-2'>
+                    {entry.tags.map((tag) => (
+                      <li class='rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground'>
+                        {tag}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ol>
+        )
+      }
+
+      {
+        hasMore && (
+          <div class='-mt-16 relative z-10 flex justify-center pt-16'>
+            <a
+              href='/til?all'
+              class='rounded-xl border bg-background px-4 py-2 text-sm transition-colors hover:bg-muted'
+            >
+              Show all {total} &rarr;
+            </a>
+          </div>
+        )
+      }
+    </section>
+  </main>
+</PageLayout>
+
+<style>
+  /* Fade the tail of the list when older entries are being withheld, so the cut-off
+     reads as intentional rather than as the end of the timeline. */
+  .til-timeline.has-more .til-entry:last-child {
+    -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+  }
+</style>

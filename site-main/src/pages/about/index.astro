@@ -1,41 +1,77 @@
 ---
-import { Button, Collapse, Spoiler, Timeline, Icon } from 'astro-pure/user'
+import { Icon } from 'astro-pure/user'
 import { Image } from 'astro:assets'
 import PageLayout from '@/layouts/CommonPage.astro'
-// import Substats from '@/components/about/Substats.astro'
-// import ToolSection from '@/components/about/ToolSection.astro'
-import config from 'virtual:config'
-import avatar from '@/assets/avatar.png'
+import config from '@/site-config'
+
+import { getAboutPage, getBooks, getNowSection, type Book } from '../../lib/sanity'
+import { renderMarkdown } from '../../lib/markdown'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
 
 const footerConf = config.footer
-let social = footerConf.social || {}
+const SOCIAL_LABELS: Record<string, string> = {
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  email: 'Email'
+}
 
+const social = footerConf.social || {}
 
+const [about, now, books] = await Promise.all([getAboutPage(), getNowSection(), getBooks()])
+
+// Shown until the About document exists in Sanity, so deploying this never leaves
+// /about blank. Safe to delete once the content is in the studio.
+const FALLBACK_BODY = `I am a Master's student in Big Data Analytics based in Ontario, Canada, with a background in backend development.
+
+I'm interested in using data to solve people's day-to-day problems. Recently, my academic and personal projects have focused on climate and urbanization where I apply statistical analysis, data modelling, and visualization techniques to reveal actionable insights, using Python, SQL, and Tableau.
+
+When I'm not working, I spend time learning, writing, making art, and gaming.
+
+*Stay curious.*`
+
+const bodyHtml = await renderMarkdown(about?.body || FALLBACK_BODY)
+const nowHtml = now?.body ? await renderMarkdown(now.body) : ''
+
+const bookshelfHeading = about?.bookshelfHeading ?? 'Bookshelf'
+const showBookshelf = Boolean(bookshelfHeading) && books.length > 0
+
+const BOOK_GROUPS: { status: Book['status']; label: string }[] = [
+  { status: 'reading', label: 'Currently reading' },
+  { status: 'finished', label: 'Finished' },
+  { status: 'want', label: 'Want to read' }
+]
+const groupedBooks = BOOK_GROUPS.map((group) => ({
+  ...group,
+  items: books.filter((b) => b.status === group.status)
+})).filter((group) => group.items.length > 0)
+
+const headings = [
+  ...(showBookshelf ? [{ depth: 2, slug: 'bookshelf', text: bookshelfHeading }] : []),
+  ...(nowHtml ? [{ depth: 2, slug: 'now', text: now!.heading }] : [])
+]
+
+const nowUpdated = now?.updatedAt
+  ? now.updatedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  : null
 ---
 
-<PageLayout title='About'>
-  <p>I am a Master's student in Big Data Analytics based in Ontario, Canada, with a background in backend development.</p>
-  <p>
-    I'm interested in using data to solve people's day-to-day problems. Recently, my academic and personal projects 
-    have focused on climate and urbanization
-    where I apply statistical analysis, data modelling, and visualization techniques to reveal actionable insights,
-    using Python, SQL, and Tableau.
-  </p>
-  <p>
-    When I'm not working, I spend time learning, writing, making art, and gaming.
-  </p>
-  <p><i>Stay curious.</i></p>
+<PageLayout title={about?.heading ?? 'About'} {headings}>
+  <div set:html={bodyHtml} />
 
-  <!-- Social Icons -->
-  <div class="flex items-center gap-x-4 mt-6">
+  {/* Social Icons */}
+  <div class='mt-6 flex items-center gap-x-4'>
     {
       Object.entries(social)
-        .filter(([platform]) => ['github', 'linkedin', 'email',].includes(platform))
-        .map(([platform, { label, url }]) => (
+        .filter(([platform]) => ['github', 'linkedin', 'email'].includes(platform))
+        .map(([platform, url]) => (
           <a
-            class="inline-block text-muted-foreground transition-all hover:text-muted-foreground/75"
-            href={url}
-            aria-label={label}
+            class='inline-block text-muted-foreground transition-all hover:text-primary'
+            href={url as string}
+            aria-label={SOCIAL_LABELS[platform] ?? platform}
           >
             <Icon name={platform as keyof typeof social} />
           </a>
@@ -43,9 +79,65 @@ let social = footerConf.social || {}
     }
   </div>
 
-  {/* now */}
-  <h2 id='now'>Now</h2>
-  <p>It's <strong>Christmas Day 2025</strong>. I have just created this section and am reworking the entire site.</p>
-  <p>I have also been drawing again. I want to start working on my shading soon.</p>
+  {
+    showBookshelf && (
+      <>
+        <h2 id='bookshelf'>{bookshelfHeading}</h2>
+        {about?.bookshelfIntro && <p>{about.bookshelfIntro}</p>}
 
+        {groupedBooks.map((group) => (
+          <section class='not-prose mt-6'>
+            <h3 class='mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground'>
+              {group.label}
+            </h3>
+            <ul class='flex flex-col gap-y-4'>
+              {group.items.map((book) => (
+                <li class='flex gap-x-4'>
+                  {book.coverImage && (
+                    <Image
+                      src={book.coverImage.src}
+                      alt={book.coverImage.alt}
+                      width={48}
+                      height={72}
+                      class='h-18 w-12 flex-shrink-0 rounded border object-cover'
+                      loading='lazy'
+                    />
+                  )}
+                  <div class='min-w-0'>
+                    <p class='font-medium'>
+                      {book.link ? (
+                        <a href={book.link} class='hover:text-primary'>
+                          {book.title}
+                        </a>
+                      ) : (
+                        book.title
+                      )}
+                      {book.author && (
+                        <span class='font-normal text-muted-foreground'> — {book.author}</span>
+                      )}
+                    </p>
+                    {book.note && <p class='mt-1 text-sm text-muted-foreground'>{book.note}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </>
+    )
+  }
+
+  {
+    nowHtml && (
+      <>
+        <h2 id='now'>{now!.heading}</h2>
+        {nowUpdated && (
+          <p class='not-prose -mt-2 mb-4 text-sm text-muted-foreground'>
+            Last updated {nowUpdated}
+          </p>
+        )}
+        <div set:html={nowHtml} />
+      </>
+    )
+  }
 </PageLayout>

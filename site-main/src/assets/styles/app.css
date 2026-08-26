@@ -12,8 +12,31 @@
   font-display: swap;
 }
 html {
-  font-family: 'Satoshi', sans-serif;
+  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 16.5px;
+}
+
+/* Headings and UI chrome keep a distinct display face; body copy stays IBM Plex Sans. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Site chrome: brand name, nav links, buttons, footer.
+   Set on the containers so every descendant inherits, rather than listing each
+   child selector. Note the header renders as the custom element
+   <header-component>, not <header> - a bare `header` selector matches nothing. */
+header,
+header-component,
+footer {
+  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 /* Theme */
@@ -73,6 +96,19 @@ a {
   &:hover {
     color: hsl(var(--primary) / var(--un-text-opacity, 1));
   }
+}
+
+/* Footnote jumps.
+   marked-footnote emits `id="footnote-<label>"` on each note in the list and
+   `id="footnote-ref-<label>"` on the superscript that references it, so this one
+   prefix covers both directions: clicking a reference to reach the note, and the
+   back-arrow to return to the reference.
+   Without this the target lands flush against the top of the viewport (partly
+   under the sticky header). The offset drops it into the upper-middle of the
+   screen instead, so the surrounding sentence stays visible. Tune the value to
+   taste - larger pushes the target further down. */
+[id^='footnote-'] {
+  scroll-margin-top: 40vh;
 }
 
 .prose :where(:not(pre) > code):not(:where([class~="not-prose"],[class~="not-prose"] *)) {

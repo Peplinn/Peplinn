@@ -1,31 +1,10 @@
 ---
-// src/pages/blog/[...page].astro
-import type { GetStaticPaths, Page } from 'astro'
+import type { Page } from 'astro'
 import type { WritingCollectionPost } from '../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
-import config from '@/site-config'
-
-// Import our new Sanity helper
-import { getSanityPosts } from '../../lib/sanity'
-
-export const prerender = true
-
-export const getStaticPaths = (async ({ paginate }) => {
-  const collections = await getSanityPosts()
-
-  const allTags = collections.flatMap((post: any) => post.data.tags)
-  const uniqueTags = [...new Set(allTags)] as string[]
-  
-  const collectionsCount = collections.length
-
-  return paginate(collections, {
-    pageSize: config.content.blogPageSize,
-    props: { uniqueTags, collectionsCount }
-  })
-}) satisfies GetStaticPaths
 
 interface Props {
   page: Page<WritingCollectionPost>
@@ -57,7 +36,7 @@ const paginationProps = {
 ---
 
 <PageLayout {meta}>
-  <Button title='Back' href='/' variant='back' />
+  <Button title='Home' href='/' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
       <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>

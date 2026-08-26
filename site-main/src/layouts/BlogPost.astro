@@ -1,6 +1,9 @@
 ---
 import type { MarkdownHeading } from 'astro'
-import type { CollectionEntry } from 'astro:content'
+
+import config from '@/site-config'
+
+import type { WritingCollectionPost } from '../lib/sanity'
 
 // Plugin styles
 import 'katex/dist/katex.min.css'
@@ -11,8 +14,8 @@ import PageLayout from '@/layouts/ContentLayout.astro'
 import { integ } from '@/site-config'
 
 interface Props {
-  post: CollectionEntry<'writing'>
-  posts: CollectionEntry<'writing'>[]
+  post: WritingCollectionPost
+  posts: WritingCollectionPost[]
   headings: MarkdownHeading[]
   remarkPluginFrontmatter: Record<string, unknown>
 }
@@ -32,13 +35,17 @@ const {
   updatedDate,
 } = data
 
-const socialImage = heroImage
-  ? typeof heroImage.src === 'string'
-    ? heroImage.src
-    : heroImage.src.src
-  : '/images/social-card.png'
+// Sanity hero images are already CDN URLs, not imported image assets.
+const socialImage = heroImage?.src ?? '/images/social-card.png'
 const articleDate = updatedDate?.toISOString() ?? publishDate.toISOString()
 const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-text-opacity))'
+
+// Feedback link: prefill the subject with the article title so replies are easy to
+// place. `email` is already a `mailto:` URL, so only the query string is appended.
+const contactUrl = config.footer.social?.email
+const feedbackHref = contactUrl
+  ? `${contactUrl}?subject=${encodeURIComponent(`Feedback on "${title}"`)}`
+  : undefined
 ---
 
 <PageLayout
@@ -48,7 +55,7 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
 >
   {!!headings.length && <TOC {headings} slot='sidebar' />}
 
-  <Hero {data} {remarkPluginFrontmatter} slot='header'>
+  <Hero data={data as any} {remarkPluginFrontmatter} slot='header'>
     <Fragment slot='description'>
     </Fragment>
   </Hero>
@@ -56,10 +63,26 @@ const primaryColor = data.heroImage?.color ?? 'hsl(var(--primary) / var(--un-tex
   <slot />
 
   <Fragment slot='bottom'>
+    {/* Feedback */}
+    {
+      feedbackHref && (
+        <aside class='mb-6 rounded-xl border bg-muted/40 px-5 py-4'>
+          <h2 class='text-base font-medium'>Wanna discuss something?</h2>
+          <p class='mt-1 text-sm text-muted-foreground'>
+            Clarifications, disagreements,
+            <a class='ms-1 underline underline-offset-4 hover:text-primary' href={feedbackHref}>
+            shoot me a mail :)
+            </a>
+            .
+          </p>
+        </aside>
+      )
+    }
+
     {/* Article recommend */}
     <ArticleBottom collections={posts} {id} class='mb-3 sm:mb-6' />
     {/* Copyright */}
-    <Copyright {data} />
+    <Copyright data={data as any} />
     
   </Fragment>
 

@@ -13,7 +13,9 @@ const typographyConfig = {
     // Title
     'h2,h3,h4,h5,h6': {
       'scroll-margin-top': '3rem',
-      'font-weight': '500',
+      'font-family': "'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif",
+      'font-weight': '600',
+      'letter-spacing': '-0.01em',
       color: fg
     },
     'h1>a,h2>a,h3>a,h4>a,h5>a,h6>a': {
@@ -100,7 +102,12 @@ const typographyConfig = {
         'border-radius': 'var(--radius)',
         'background-color': 'hsl(var(--muted) / var(--un-bg-opacity, 1))'
       },
-      ':not(pre)>code::before,:not(pre)>code::after': {
+      // Must stay as two separate keys: presetTypography drops the pseudo-element
+      // from all but the first selector when they share one comma-separated key.
+      ':not(pre)>code::before': {
+        content: 'none'
+      },
+      ':not(pre)>code::after': {
         content: 'none'
       }
     }),
@@ -131,7 +138,11 @@ const typographyConfig = {
     },
     'code:not(pre code)': {
       'white-space': 'pre-wrap!important',
-      'word-break': 'break-all!important'
+      'word-break': 'normal!important',
+      'overflow-wrap': 'break-word!important',
+      // Keep the padding and border intact on each fragment when it does wrap.
+      'box-decoration-break': 'clone',
+      '-webkit-box-decoration-break': 'clone'
     }
   }
 }

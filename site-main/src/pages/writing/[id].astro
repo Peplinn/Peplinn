@@ -1,0 +1,36 @@
+---
+import PostLayout from '@/layouts/BlogPost.astro'
+
+import type { WritingCollectionPost } from '../../lib/sanity'
+import { getSanityPosts } from '../../lib/sanity'
+import { extractHeadings, renderMarkdown } from '../../lib/markdown'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
+
+const { id } = Astro.params
+
+// Pagination used to live at /writing/2 before it moved under /writing/page/2.
+if (id && /^\d+$/.test(id)) return Astro.redirect(`/writing/page/${id}`, 301)
+
+const posts: WritingCollectionPost[] = await getSanityPosts()
+const post = posts.find((p) => p.slug === id)
+
+if (!post) return Astro.redirect('/404')
+
+const htmlContent = await renderMarkdown(post.body)
+const headings = await extractHeadings(post.body)
+---
+
+<PostLayout
+  {post}
+  {posts}
+  {headings}
+  remarkPluginFrontmatter={{ minutesRead: post.data.minutesRead }}
+>
+  <article class='prose prose-pure dark:prose-invert max-w-none'>
+    <div set:html={htmlContent} />
+  </article>
+</PostLayout>

@@ -12,16 +12,24 @@ import portrait from '@/assets/portrait.jpg'
 import config from '@/site-config'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
 import { getSanityProjects } from '../lib/sanity'
+import { noStore } from '../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
+
+const SOCIAL_LABELS: Record<string, string> = {
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  email: 'Email'
+}
+
+const social = config.footer.social || {}
 
 const projects = await getSanityProjects()
 
 // const MAX_POSTS = 10
-const allPosts = await getSanityPosts()
-const allPostsByDate = [...allPosts].sort(
-  (a, b) =>
-    new Date(b.data.updatedDate ?? b.data.publishDate ?? 0).valueOf() -
-    new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
-)
+const allPostsByDate = await getSanityPosts()
 ---
 
 <PageLayout meta={{ title: 'Home' }}>
@@ -37,7 +45,7 @@ const allPostsByDate = [...allPosts].sort(
 
       <div class='flex flex-col gap-y-1'>
         <h1 class='text-3xl font-bold'>Hey! I'm Ebube</h1>
-        <p class='text-base text-foreground/70'>/ae-boo-bae/</p>
+        <p class='text-base text-foreground/70'>Pronounced /ae-boo-bae/</p>
       </div>
     </section>
 
@@ -47,7 +55,22 @@ const allPostsByDate = [...allPosts].sort(
         <p class='text-base text-foreground/80'>
           I use data to solve problems. My work spans statistical modelling, machine learning, and software development, and I am drawn to projects rooted in real-world systems.
         </p>
-        <Button title='More about me' class='w-fit' href='/about' variant='ahead' />
+        {/* Social links, in place of the old "More about me" button */}
+        <div class='flex items-center gap-x-4'>
+          {
+            Object.entries(social)
+              .filter(([platform]) => ['github', 'linkedin', 'email'].includes(platform))
+              .map(([platform, url]) => (
+                <a
+                  class='inline-block text-muted-foreground transition-all hover:text-primary'
+                  href={url as string}
+                  aria-label={SOCIAL_LABELS[platform] ?? platform}
+                >
+                  <Icon name={platform as keyof typeof social} />
+                </a>
+              ))
+          }
+        </div>
       </div>
 
       <Section title='Recent Projects' class='!flex-col !gap-y-5'>

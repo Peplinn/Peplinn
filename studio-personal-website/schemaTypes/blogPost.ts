@@ -40,7 +40,8 @@ export const blogPost = defineType({
     defineField({
       name: 'tags',
       type: 'array',
-      of: [{type: 'string'}]
+      description: 'Pick from existing tags, or create a new one from the same field.',
+      of: [{type: 'reference', to: [{type: 'tag'}]}]
     })
   ]
 })
