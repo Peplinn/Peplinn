@@ -13,7 +13,7 @@ const typographyConfig = {
     // Title
     'h2,h3,h4,h5,h6': {
       'scroll-margin-top': '3rem',
-      'font-family': "'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif",
+      'font-family': "'Autour One', 'Work Sans', ui-sans-serif, system-ui, sans-serif",
       'font-weight': '600',
       'letter-spacing': '-0.01em',
       color: fg
