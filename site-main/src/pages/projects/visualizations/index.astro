@@ -1,0 +1,46 @@
+---
+import { Button, Icon } from 'astro-pure/user'
+import PageLayout from '@/layouts/CommonPage.astro'
+import ProjectSection from '@/components/projects/ProjectSection.astro'
+
+import { isVisualization, toProjectCard, VISUALIZATIONS_DESCRIPTION } from '../../../lib/projects'
+import { getSanityProjects } from '../../../lib/sanity'
+import { noStore } from '../../../lib/ssr'
+
+export const prerender = false
+
+noStore(Astro.response.headers)
+
+const projects = await getSanityProjects()
+const visualizations = projects.filter(isVisualization)
+
+if (visualizations.length === 0) return Astro.redirect('/projects')
+
+const cards = visualizations.map(toProjectCard)
+
+/**
+ * Every visualization lives in one repository, so the shared root of the per-piece
+ * GitHub links doubles as the repository link for the whole page.
+ */
+function repoRoot(url?: string) {
+  const match = url?.match(/^https:\/\/github\.com\/[^/]+\/[^/]+/)
+  return match?.[0]
+}
+const repoUrl = repoRoot(visualizations.find((p) => p.data.github)?.data.github)
+---
+
+<PageLayout title='Visualizations' back='/projects'>
+  <p>{VISUALIZATIONS_DESCRIPTION}</p>
+
+  {
+    repoUrl && (
+      <Button title='Browse the repository' class='w-fit' href={repoUrl}>
+        <Icon class='size-5' name='github-circle' slot='before' />
+      </Button>
+    )
+  }
+
+  <div class='not-prose mt-8'>
+    <ProjectSection projects={cards} />
+  </div>
+</PageLayout>

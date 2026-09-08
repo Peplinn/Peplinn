@@ -8,6 +8,10 @@ interface Props {
   title: string
   headings?: MarkdownHeading[]
   view?: boolean
+  /** Destination of the "Back" button; forwarded to ContentLayout. */
+  back?: string
+  /** Reading-progress readout; forwarded to ContentLayout. Off unless asked for. */
+  progress?: boolean
 }
 
 const { title, headings, ...props } = Astro.props

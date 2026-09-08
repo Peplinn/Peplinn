@@ -1,17 +1,7 @@
 ---
-import config from 'virtual:config'
+// The visualizations listing moved under /projects when they were grouped behind a
+// single card. Kept so older links keep working.
+export const prerender = false
 
-import PageLayout from '@/layouts/CommonPage.astro'
-
-const headings = [
-  { depth: 2, slug: 'maps', text: 'Maps' },
-  { depth: 2, slug: 'tidytuesday', text: 'TidyTuesday' }
-]
-
-
-const linksConf = config.integ.links
+return Astro.redirect('/projects/visualizations', 301)
 ---
-
-<PageLayout title='Visualizations' {headings}>
-  <h2 id='common-links'>Visualizations</h2>
-</PageLayout>

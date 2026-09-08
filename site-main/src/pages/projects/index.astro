@@ -1,14 +1,9 @@
 ---
-import { Image } from 'astro:assets'
-
-import { Button, Collapse, Icon } from 'astro-pure/user'
+import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
-import Sponsors from '@/components/projects/Sponsors.astro'
-import Sponsorship from '@/components/projects/Sponsorship.astro'
-import alipay from '@/assets/alipay-qrcode.jpg'
-import KeyIcon from '@/assets/icons/key.svg'
-import wechat from '@/assets/wechat-qrcode.jpg'
+
+import { buildProjectCards } from '../../lib/projects'
 import { getSanityProjects } from '../../lib/sanity'
 import { noStore } from '../../lib/ssr'
 
@@ -18,57 +13,17 @@ noStore(Astro.response.headers)
 
 const projects = await getSanityProjects()
 
-const headings = [
-  { depth: 2, slug: 'visualizations', text: 'Visualizations' },
-  { depth: 2, slug: 'programs', text: 'Programs' },
-]
+// Visualizations collapse into a single card that opens /projects/visualizations;
+// every other project keeps a card of its own.
+const cards = buildProjectCards(projects)
 ---
 
 <PageLayout title='Projects'>
-  <h3 id='visualizations'>Visualizations</h2>
-  <ProjectSection
-    projects={projects.slice(0, 5).map(p => ({
-            name: p.data.title,
-            description: p.data.description,
-            image: p.data.image,
-            links: [
-              p.data.github && { type: 'github', href: p.data.github },
-              p.data.liveSite && { type: 'site', href: p.data.liveSite }
-            ].filter(
-              (l): l is { type: string; href: string } => Boolean(l)
-            )
-          }))}
-  />
-
-  <!-- <h2 id='programs'>Programs</h2>
-  <ProjectSection
-    projects={[
-      {
-        name: 'Owa',
-        description:
-          'Android note App complies with Material You specifications, developed using Java',
-        links: [
-          { type: 'github', href: 'https://github.com/cworld1/notie' },
-          {
-            type: 'release',
-            href: 'https://github.com/cworld1/notie/releases'
-          }
-        ]
-      },
-      {
-        name: '💄 PKU Art',
-        description: 'A script to beautify pku course website',
-        links: [
-          { type: 'github', href: 'https://github.com/zhuozhiyongde/pku-art' },
-          { type: 'site', href: 'https://github.com/zhuozhiyongde/pku-art' },
-          { type: 'doc', href: 'https://docs.arthals.ink/docs/pku-art' }
-        ]
-      }
-    ]}
-  /> -->
+  <ProjectSection projects={cards} />
 
   <p>
-    If you would like to collaborate on a project, support this website, or just say hello, you can contact me below.
+    If you would like to collaborate on a project, support this website, or just say hello, you can
+    contact me below.
   </p>
   <Button title='Say hello' class='w-fit' href='mailto:ebube@ebubeoluoma.com'>
     <Icon class='size-5' name='email' slot='before' />
@@ -76,26 +31,4 @@ const headings = [
   <Button title='Cheers!' class='w-fit' href='https://buymeacoffee.com/peplinn'>
     <Icon class='size-5' name='receive-money' slot='before' />
   </Button>
-  
-
 </PageLayout>
-
-<style>
-  .sponsorship-card {
-    & .sponsorship-card-img {
-      opacity: 0.3;
-      --un-blur: blur(4px);
-      filter: var(--un-blur);
-    }
-
-    &:hover {
-      & .sponsorship-card-icon {
-        opacity: 0;
-      }
-      & .sponsorship-card-img {
-        opacity: 1;
-        --un-blur: blur(0);
-      }
-    }
-  }
-</style>

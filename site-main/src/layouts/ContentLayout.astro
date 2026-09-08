@@ -10,9 +10,11 @@ interface Props {
   meta: SiteMeta
   highlightColor?: string
   back?: string
+  /** Reading-progress readout in the floating button. Articles only. */
+  progress?: boolean
 }
 
-const { meta, highlightColor, back = '/', ...props } = Astro.props
+const { meta, highlightColor, back = '/', progress = false, ...props } = Astro.props
 ---
 
 <PageLayout {meta} {highlightColor} {...props}>
@@ -62,7 +64,7 @@ const { meta, highlightColor, back = '/', ...props } = Astro.props
     </div>
   </div>
 
-  <BackToTop header='content-header' content='content'>
+  <BackToTop header='content-header' content='content' needPercent={progress}>
     <button
       slot='other-icons'
       aria-label='Toggle sidebar'

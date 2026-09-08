@@ -24,6 +24,22 @@ export const project = defineType({
     }),
 
     defineField({
+      name: 'type',
+      title: 'Project type',
+      type: 'string',
+      description:
+        'Visualizations are grouped behind a single card on the site; programs get their own card.',
+      initialValue: 'visualization',
+      options: {
+        list: [
+          { title: 'Visualization', value: 'visualization' },
+          { title: 'Program', value: 'program' }
+        ],
+        layout: 'radio'
+      }
+    }),
+
+    defineField({
       name: 'image',
       type: 'image',
       options: { hotspot: true },

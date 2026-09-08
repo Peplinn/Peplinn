@@ -210,6 +210,26 @@ const rules: Rule<object>[] = [
     {
       'background-size': 'cover'
     }
+  ],
+  // presetMini has no line-clamp; the project cards and the bookshelf both rely on it.
+  [
+    /^line-clamp-(\d+)$/,
+    ([, lines]) => ({
+      display: '-webkit-box',
+      '-webkit-box-orient': 'vertical',
+      '-webkit-line-clamp': lines,
+      'line-clamp': lines,
+      overflow: 'hidden'
+    })
+  ],
+  [
+    'line-clamp-none',
+    {
+      display: 'block',
+      '-webkit-line-clamp': 'unset',
+      'line-clamp': 'unset',
+      overflow: 'visible'
+    }
   ]
 ]
 
