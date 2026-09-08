@@ -78,16 +78,7 @@ const nowUpdated = now?.updatedAt
     }
   </div>
 
-  {
-    showBookshelf && (
-      <>
-        <h2 id='bookshelf'>{bookshelfHeading}</h2>
-        {about?.bookshelfIntro && <p>{about.bookshelfIntro}</p>}
-
-        <Bookshelf groups={groupedBooks} />
-      </>
-    )
-  }
+  
 
   {
     nowHtml && (
@@ -99,6 +90,17 @@ const nowUpdated = now?.updatedAt
           </p>
         )}
         <div set:html={nowHtml} />
+      </>
+    )
+  }
+
+  {
+    showBookshelf && (
+      <>
+        <h2 id='bookshelf'>{bookshelfHeading}</h2>
+        {about?.bookshelfIntro && <p>{about.bookshelfIntro}</p>}
+
+        <Bookshelf groups={groupedBooks} />
       </>
     )
   }
