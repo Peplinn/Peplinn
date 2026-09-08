@@ -10,9 +10,11 @@ interface Props {
   meta: SiteMeta
   highlightColor?: string
   back?: string
+  /** Reading-progress readout in the floating button. Articles only. */
+  progress?: boolean
 }
 
-const { meta, highlightColor, back = '/', ...props } = Astro.props
+const { meta, highlightColor, back = '/', progress = false, ...props } = Astro.props
 ---
 
 <PageLayout {meta} {highlightColor} {...props}>
@@ -20,8 +22,7 @@ const { meta, highlightColor, back = '/', ...props } = Astro.props
   <main class='mt-6 items-start gap-x-10 md:flex'>
     {/* Sidebar */}
     <aside
-      class='animate top-20 min-w-48 basis-60 overflow-y-scroll max-md:hidden z-40 fixed md:sticky md:order-2 lg:shrink-0 max-md:border max-md:px-4 max-md:py-3 max-md:bg-muted max-md:rounded-xl'
-      style='height:calc(100vh - 7rem);'
+      class='animate top-20 min-w-48 basis-60 overflow-y-auto max-md:hidden z-40 fixed md:sticky md:order-2 lg:shrink-0 max-md:border max-md:px-4 max-md:py-3 max-md:bg-muted max-md:rounded-xl'
       id='sidebar'
     >
       <slot name='sidebar' />
@@ -62,7 +63,7 @@ const { meta, highlightColor, back = '/', ...props } = Astro.props
     </div>
   </div>
 
-  <BackToTop header='content-header' content='content'>
+  <BackToTop header='content-header' content='content' needPercent={progress}>
     <button
       slot='other-icons'
       aria-label='Toggle sidebar'
@@ -101,6 +102,20 @@ const { meta, highlightColor, back = '/', ...props } = Astro.props
   })
 </script>
 <style>
+  @media (min-width: 770px) {
+    /*
+     * The sidebar used to carry an inline `height: calc(100vh - 7rem)`. On desktop
+     * it sits in the flex row, so that fixed height became the row's height and any
+     * article shorter than the viewport was followed by a screenful of empty space
+     * before the footer. `max-height` keeps the long-TOC scrolling behaviour while
+     * letting a short - or empty - sidebar collapse to nothing. Mobile is unaffected:
+     * the drawer below sets its own height, and the aside is hidden under `md`.
+     */
+    #sidebar {
+      max-height: calc(100vh - 7rem);
+    }
+  }
+
   @media (min-width: 769px) {
     #sidebar-shade {
       display: none !important;

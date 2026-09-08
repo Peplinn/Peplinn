@@ -12,11 +12,11 @@
   font-display: swap;
 }
 html {
-  font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 16.5px;
 }
 
-/* Headings and UI chrome keep a distinct display face; body copy stays IBM Plex Sans. */
+/* Headings and UI chrome keep a distinct display face; body copy stays Albert Sans. */
 h1,
 h2,
 h3,
@@ -24,8 +24,19 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
+}
+
+/* Dates and small metadata.
+   These used to be inconsistent: FormattedDate hardcoded `font-mono` while Hero
+   overrode it with `font-sans` (UnoCSS's *system* stack, not the body face), so
+   article dates and list dates rendered in two different fonts, neither of them
+   the site's own. This is the single place that decides.
+   `tabular-nums` keeps the date column in post lists vertically aligned. */
+.font-meta {
+  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Site chrome: brand name, nav links, buttons, footer.
@@ -35,7 +46,7 @@ h6,
 header,
 header-component,
 footer {
-  font-family: 'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -111,13 +122,194 @@ a {
   scroll-margin-top: 40vh;
 }
 
-.prose :where(:not(pre) > code):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+.prose :where(:not(pre) > code):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
   color: hsl(var(--foreground)) !important;
   background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
 }
 
-.prose :where(blockquote):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+.prose :where(blockquote):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
   color: hsl(var(--foreground)) !important;
   border-left-color: hsl(var(--border)) !important;
   background-color: hsl(var(--muted) / var(--un-bg-opacity, 1)) !important;
+}
+/* ---------------------------------------------------------------------------
+   Callouts
+   ---------------------------------------------------------------------------
+   Obsidian-style admonitions, emitted by `src/lib/callouts.ts` from
+
+       > [!warning] Mind the gap
+       > The platform is further away than it looks.
+
+   Every visual difference between types comes from one custom property,
+   `--callout-color` (an HSL triplet, so alpha can be applied to it). To add a
+   type: register it in `CALLOUT_TYPES` in `src/lib/callouts.ts` for its label and
+   icon, then give it a colour here. Anything with no rule of its own falls back
+   to the `.callout` default below, so an unrecognised type still looks deliberate.
+   --------------------------------------------------------------------------- */
+
+.callout {
+  --callout-color: 217 91% 45%;
+
+  margin: 1.6em 0;
+  border: 1px solid hsl(var(--callout-color) / 0.35);
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background-color: hsl(var(--callout-color) / 0.07);
+  padding: 0.9em 1.1em;
+  overflow: hidden;
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  color: hsl(var(--callout-color));
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.callout-icon {
+  flex-shrink: 0;
+}
+
+.callout-content {
+  margin-top: 0.5em;
+}
+
+/* The callout body sits inside `.prose`, which gives the first and last block a
+   vertical margin that would otherwise show up as uneven padding. */
+.callout-content > :first-child {
+  margin-top: 0;
+}
+.callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+/* An empty body (a title-only callout) should not leave a gap under the title. */
+.callout-content:empty {
+  display: none;
+}
+
+/* Foldable callouts: `> [!note]-` closed, `> [!note]+` open. */
+details.callout > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+details.callout > summary::-webkit-details-marker {
+  display: none;
+}
+details.callout > summary::after {
+  content: '';
+  margin-inline-start: auto;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+details.callout[open] > summary::after {
+  transform: rotate(45deg);
+}
+details.callout > summary:focus-visible {
+  outline: 2px solid hsl(var(--callout-color));
+  outline-offset: 2px;
+  border-radius: calc(var(--radius) / 2);
+}
+/* Closed, the title is the whole control, so the padding above reads as balanced. */
+details.callout:not([open]) {
+  padding-bottom: 0.9em;
+}
+
+/* Per-type colours. Left column is light mode, the `.dark` block below lifts each
+   hue so it stays legible on the dark background. */
+.callout[data-callout='abstract'],
+.callout[data-callout='summary'],
+.callout[data-callout='tldr'] {
+  --callout-color: 189 94% 32%;
+}
+.callout[data-callout='tip'],
+.callout[data-callout='hint'],
+.callout[data-callout='important'] {
+  --callout-color: 173 80% 30%;
+}
+.callout[data-callout='success'],
+.callout[data-callout='check'],
+.callout[data-callout='done'] {
+  --callout-color: 142 71% 30%;
+}
+.callout[data-callout='question'],
+.callout[data-callout='help'],
+.callout[data-callout='faq'] {
+  --callout-color: 38 92% 36%;
+}
+.callout[data-callout='warning'],
+.callout[data-callout='caution'],
+.callout[data-callout='attention'] {
+  --callout-color: 25 95% 40%;
+}
+.callout[data-callout='failure'],
+.callout[data-callout='fail'],
+.callout[data-callout='missing'],
+.callout[data-callout='danger'],
+.callout[data-callout='error'] {
+  --callout-color: 0 72% 45%;
+}
+.callout[data-callout='bug'] {
+  --callout-color: 340 82% 44%;
+}
+.callout[data-callout='example'] {
+  --callout-color: 262 83% 50%;
+}
+.callout[data-callout='quote'],
+.callout[data-callout='cite'] {
+  --callout-color: 240 4% 40%;
+}
+
+.dark .callout {
+  --callout-color: 213 94% 68%;
+  background-color: hsl(var(--callout-color) / 0.11);
+}
+.dark .callout[data-callout='abstract'],
+.dark .callout[data-callout='summary'],
+.dark .callout[data-callout='tldr'] {
+  --callout-color: 187 92% 60%;
+}
+.dark .callout[data-callout='tip'],
+.dark .callout[data-callout='hint'],
+.dark .callout[data-callout='important'] {
+  --callout-color: 172 66% 55%;
+}
+.dark .callout[data-callout='success'],
+.dark .callout[data-callout='check'],
+.dark .callout[data-callout='done'] {
+  --callout-color: 142 69% 58%;
+}
+.dark .callout[data-callout='question'],
+.dark .callout[data-callout='help'],
+.dark .callout[data-callout='faq'] {
+  --callout-color: 43 96% 62%;
+}
+.dark .callout[data-callout='warning'],
+.dark .callout[data-callout='caution'],
+.dark .callout[data-callout='attention'] {
+  --callout-color: 27 96% 61%;
+}
+.dark .callout[data-callout='failure'],
+.dark .callout[data-callout='fail'],
+.dark .callout[data-callout='missing'],
+.dark .callout[data-callout='danger'],
+.dark .callout[data-callout='error'] {
+  --callout-color: 0 91% 71%;
+}
+.dark .callout[data-callout='bug'] {
+  --callout-color: 339 90% 68%;
+}
+.dark .callout[data-callout='example'] {
+  --callout-color: 258 90% 72%;
+}
+.dark .callout[data-callout='quote'],
+.dark .callout[data-callout='cite'] {
+  --callout-color: 240 5% 65%;
 }

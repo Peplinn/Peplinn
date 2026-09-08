@@ -114,8 +114,10 @@ export const integ: IntegrationUserConfig = {
       { name: 'Avatar', val: 'https://astro-pure.js.org/favicon/favicon.ico' }
     ]
   },
-  // Enable page search function
-  pagefind: true,
+  // Pagefind indexes static HTML at build time, but every content page renders on
+  // demand from Sanity - it only ever saw the handful of prerendered pages. Search
+  // now reads /search-index.json instead, so the index build is dead weight.
+  pagefind: false,
   // Add a random quote to the footer (default on homepage footer)
   // See: https://astro-pure.js.org/docs/integrations/advanced#web-content-render
   quote: {

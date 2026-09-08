@@ -13,7 +13,7 @@ const typographyConfig = {
     // Title
     'h2,h3,h4,h5,h6': {
       'scroll-margin-top': '3rem',
-      'font-family': "'Space Grotesk', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif",
+      'font-family': "'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif",
       'font-weight': '600',
       'letter-spacing': '-0.01em',
       color: fg
@@ -56,9 +56,18 @@ const typographyConfig = {
       transform: 'rotate(-15deg)',
       opacity: '0.1'
     },
-    // Table
+    // Table.
+    // Centred in the column the way a display equation is, rather than pinned to
+    // the left margin: `fit-content` shrinks the block to the table itself so
+    // `margin-inline: auto` has something to centre. `display: block` (kept from
+    // before) is what allows the overflow scroll, so a table wider than the column
+    // scrolls on its own instead of being clipped by `#content`'s overflow-hidden.
     table: {
       display: 'block',
+      width: 'fit-content',
+      'max-width': '100%',
+      'margin-inline': 'auto',
+      'overflow-x': 'auto',
       'font-size': '.875em'
     },
     'table tr': {
@@ -209,6 +218,26 @@ const rules: Rule<object>[] = [
     'bg-cover',
     {
       'background-size': 'cover'
+    }
+  ],
+  // presetMini has no line-clamp; the project cards and the bookshelf both rely on it.
+  [
+    /^line-clamp-(\d+)$/,
+    ([, lines]) => ({
+      display: '-webkit-box',
+      '-webkit-box-orient': 'vertical',
+      '-webkit-line-clamp': lines,
+      'line-clamp': lines,
+      overflow: 'hidden'
+    })
+  ],
+  [
+    'line-clamp-none',
+    {
+      display: 'block',
+      '-webkit-line-clamp': 'unset',
+      'line-clamp': 'unset',
+      overflow: 'visible'
     }
   ]
 ]

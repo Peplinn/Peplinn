@@ -14,7 +14,7 @@ const { date, dateTimeOptions, class: className, ...attrs } = Astro.props
 const postDate = getFormattedDate(date, dateTimeOptions)
 ---
 
-<span class={cn('text-muted-foreground font-mono', className)} {...attrs}>
+<span class={cn('text-muted-foreground font-meta', className)} {...attrs}>
   <time datetime={date.toISOString()}>
     {postDate}
   </time>

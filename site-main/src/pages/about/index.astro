@@ -1,11 +1,11 @@
 ---
 import { Icon } from 'astro-pure/user'
-import { Image } from 'astro:assets'
 import PageLayout from '@/layouts/CommonPage.astro'
+import Bookshelf from '@/components/about/Bookshelf.astro'
 import config from '@/site-config'
 
-import { getAboutPage, getBooks, getNowSection, type Book } from '../../lib/sanity'
 import { renderMarkdown } from '../../lib/markdown'
+import { getAboutPage, getBooks, getNowSection, type Book } from '../../lib/sanity'
 import { noStore } from '../../lib/ssr'
 
 export const prerender = false
@@ -49,17 +49,16 @@ const groupedBooks = BOOK_GROUPS.map((group) => ({
   items: books.filter((b) => b.status === group.status)
 })).filter((group) => group.items.length > 0)
 
-const headings = [
-  ...(showBookshelf ? [{ depth: 2, slug: 'bookshelf', text: bookshelfHeading }] : []),
-  ...(nowHtml ? [{ depth: 2, slug: 'now', text: now!.heading }] : [])
-]
-
 const nowUpdated = now?.updatedAt
   ? now.updatedAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   : null
 ---
 
-<PageLayout title={about?.heading ?? 'About'} {headings}>
+{
+  /* No table of contents here - the page is short and its two sections are visible
+    at a glance. The heading ids stay so /about#bookshelf and /about#now still work. */
+}
+<PageLayout title={about?.heading ?? 'About'}>
   <div set:html={bodyHtml} />
 
   {/* Social Icons */}
@@ -85,44 +84,7 @@ const nowUpdated = now?.updatedAt
         <h2 id='bookshelf'>{bookshelfHeading}</h2>
         {about?.bookshelfIntro && <p>{about.bookshelfIntro}</p>}
 
-        {groupedBooks.map((group) => (
-          <section class='not-prose mt-6'>
-            <h3 class='mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground'>
-              {group.label}
-            </h3>
-            <ul class='flex flex-col gap-y-4'>
-              {group.items.map((book) => (
-                <li class='flex gap-x-4'>
-                  {book.coverImage && (
-                    <Image
-                      src={book.coverImage.src}
-                      alt={book.coverImage.alt}
-                      width={48}
-                      height={72}
-                      class='h-18 w-12 flex-shrink-0 rounded border object-cover'
-                      loading='lazy'
-                    />
-                  )}
-                  <div class='min-w-0'>
-                    <p class='font-medium'>
-                      {book.link ? (
-                        <a href={book.link} class='hover:text-primary'>
-                          {book.title}
-                        </a>
-                      ) : (
-                        book.title
-                      )}
-                      {book.author && (
-                        <span class='font-normal text-muted-foreground'> — {book.author}</span>
-                      )}
-                    </p>
-                    {book.note && <p class='mt-1 text-sm text-muted-foreground'>{book.note}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <Bookshelf groups={groupedBooks} />
       </>
     )
   }

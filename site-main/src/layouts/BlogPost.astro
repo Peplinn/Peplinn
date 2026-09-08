@@ -4,7 +4,6 @@ import type { MarkdownHeading } from 'astro'
 import config from '@/site-config'
 
 import type { WritingCollectionPost } from '../lib/sanity'
-
 // Plugin styles
 import 'katex/dist/katex.min.css'
 
@@ -27,13 +26,7 @@ const {
   remarkPluginFrontmatter
 } = Astro.props
 
-const {
-  description,
-  heroImage,
-  publishDate,
-  title,
-  updatedDate,
-} = data
+const { description, heroImage, publishDate, title, updatedDate } = data
 
 // Sanity hero images are already CDN URLs, not imported image assets.
 const socialImage = heroImage?.src ?? '/images/social-card.png'
@@ -52,12 +45,12 @@ const feedbackHref = contactUrl
   meta={{ articleDate, description, ogImage: socialImage, title }}
   highlightColor={primaryColor}
   back='/writing'
+  progress
 >
   {!!headings.length && <TOC {headings} slot='sidebar' />}
 
   <Hero data={data as any} {remarkPluginFrontmatter} slot='header'>
-    <Fragment slot='description'>
-    </Fragment>
+    <Fragment slot='description'> </Fragment>
   </Hero>
 
   <slot />
@@ -71,7 +64,7 @@ const feedbackHref = contactUrl
           <p class='mt-1 text-sm text-muted-foreground'>
             Clarifications, disagreements,
             <a class='ms-1 underline underline-offset-4 hover:text-primary' href={feedbackHref}>
-            shoot me a mail :)
+              shoot me a mail :)
             </a>
             .
           </p>
@@ -83,7 +76,6 @@ const feedbackHref = contactUrl
     <ArticleBottom collections={posts} {id} class='mb-3 sm:mb-6' />
     {/* Copyright */}
     <Copyright data={data as any} />
-    
   </Fragment>
 
   <slot name='bottom-sidebar' slot='bottom-sidebar' />

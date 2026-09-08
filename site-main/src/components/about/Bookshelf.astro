@@ -1,0 +1,146 @@
+---
+import type { Book } from '../../lib/sanity'
+
+interface Props {
+  groups: { status: Book['status']; label: string; items: Book[] }[]
+}
+
+const { groups } = Astro.props
+
+/** "Finished January 2026" - the month is as precise as the shelf needs to be. */
+function completedLabel(book: Book) {
+  if (!book.finishedAt) return undefined
+  const month = book.finishedAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  return book.status === 'finished' ? `Finished ${month}` : month
+}
+---
+
+<div class='not-prose'>
+  {
+    groups.map((group) => (
+      <section class='mt-8 first:mt-6'>
+        <h3 class='mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground'>
+          {group.label}
+        </h3>
+
+        <ul class='grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 md:grid-cols-5'>
+          {group.items.map((book) => {
+            const completed = completedLabel(book)
+            const Tag = book.link ? 'a' : 'div'
+
+            return (
+              <li class='book-tile'>
+                {/* Linked tiles are focusable already; a tile without a link gets a
+                    tabindex so keyboard users can still reveal its caption. */}
+                <Tag
+                  href={book.link}
+                  class='book-face relative block aspect-[2/3] w-full overflow-hidden rounded-md border bg-muted no-underline shadow-sm'
+                  tabindex={book.link ? undefined : '0'}
+                >
+                  {book.coverImage ? (
+                    <img
+                      class='absolute inset-0 size-full object-cover'
+                      src={book.coverImage.src}
+                      alt=''
+                      loading='lazy'
+                      decoding='async'
+                    />
+                  ) : (
+                    <span class='absolute inset-0 flex items-center justify-center p-2 text-center text-xs font-medium text-muted-foreground'>
+                      {book.title}
+                    </span>
+                  )}
+
+                  <span class='book-caption absolute inset-0 flex flex-col justify-end gap-y-0.5 p-2.5 text-left'>
+                    <span class='line-clamp-3 text-xs font-medium leading-snug text-white sm:text-sm'>
+                      {book.title}
+                    </span>
+                    {book.author && (
+                      <span class='line-clamp-2 text-[0.7rem] leading-snug text-white/75'>
+                        {book.author}
+                      </span>
+                    )}
+                    {completed && (
+                      <span class='text-[0.65rem] leading-snug text-white/60'>{completed}</span>
+                    )}
+                  </span>
+                </Tag>
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  /* The grid never moves: the caption fades in over the cover it belongs to. */
+  .book-caption {
+    opacity: 0;
+    transition: opacity 250ms ease;
+    /* Written by hand - presetMini ships no gradient utilities. */
+    background-image: linear-gradient(
+      to top,
+      rgb(0 0 0 / 0.92) 0%,
+      rgb(0 0 0 / 0.75) 55%,
+      rgb(0 0 0 / 0.25) 100%
+    );
+  }
+
+  @media (hover: hover) {
+    .book-tile:hover .book-caption {
+      opacity: 1;
+    }
+  }
+
+  .book-tile:focus-within .book-caption,
+  .book-tile.is-open .book-caption {
+    opacity: 1;
+  }
+
+  .book-face:focus-visible {
+    outline: 2px solid var(--color-primary, currentColor);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book-caption {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  // On touch there is no hover, so the first tap reveals the caption and a second
+  // tap follows the book's link. Pointer devices never reach this handler.
+  function setupBookshelf() {
+    const tiles = Array.from(document.querySelectorAll<HTMLElement>('.book-tile'))
+    if (tiles.length === 0) return
+
+    const closeAll = (except?: HTMLElement) => {
+      for (const tile of tiles) if (tile !== except) tile.classList.remove('is-open')
+    }
+
+    for (const tile of tiles) {
+      tile.addEventListener('click', (event) => {
+        if (window.matchMedia('(hover: hover)').matches) return
+        if (tile.classList.contains('is-open')) return
+        event.preventDefault()
+        closeAll(tile)
+        tile.classList.add('is-open')
+      })
+    }
+
+    document.addEventListener('click', (event) => {
+      if (!(event.target as HTMLElement | null)?.closest('.book-tile')) closeAll()
+    })
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeAll()
+    })
+  }
+
+  setupBookshelf()
+  document.addEventListener('astro:after-swap', setupBookshelf)
+</script>

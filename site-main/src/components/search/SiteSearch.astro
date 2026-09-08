@@ -1,0 +1,313 @@
+---
+import { Icon } from 'astro-pure/user'
+---
+
+<site-search class='block'>
+  <form class='not-prose relative mt-4' role='search' autocomplete='off'>
+    <span class='absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground'>
+      <Icon name='search' class='size-5' />
+    </span>
+    <input
+      id='search-input'
+      type='search'
+      name='q'
+      class='w-full rounded-xl border-2 bg-transparent py-2 pe-3 ps-10 outline-none transition-colors focus:border-foreground'
+      placeholder='Search posts and projects'
+      aria-label='Search posts and projects'
+      aria-describedby='search-status'
+      aria-controls='search-results'
+      autocomplete='off'
+    />
+  </form>
+
+  <p id='search-status' class='not-prose mt-3 text-sm text-muted-foreground' role='status'>
+    Start typing to search the site.
+  </p>
+
+  <ul id='search-results' class='not-prose mt-4 flex flex-col gap-y-2'></ul>
+</site-search>
+
+<style>
+  #search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Emitted by the result renderer, so it sits outside Astro's style scoping. */
+  #search-results :global(mark) {
+    background-color: transparent;
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  type SearchEntry = {
+    id: string
+    title: string
+    url: string
+    kind: string
+    description: string
+    tags: string[]
+    date?: string
+    body: string
+  }
+
+  type Scored = { entry: SearchEntry; score: number; snippet: string }
+
+  /** Field weights. A title hit should always outrank a passing mention in prose. */
+  const WEIGHTS = { title: 12, tags: 6, description: 4, body: 1 }
+  const MAX_RESULTS = 20
+  const SNIPPET_RADIUS = 90
+
+  const HTML_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }
+
+  function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char])
+  }
+
+  function escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  function countMatches(haystack: string, term: string) {
+    if (!haystack) return 0
+    let count = 0
+    let index = haystack.indexOf(term)
+    while (index !== -1) {
+      count += 1
+      index = haystack.indexOf(term, index + term.length)
+    }
+    return count
+  }
+
+  /**
+   * Every term has to appear somewhere in the entry, so a two-word query narrows
+   * rather than widens. Within that, hits are weighted by the field they land in.
+   */
+  function scoreEntry(entry: SearchEntry, terms: string[]) {
+    const title = entry.title.toLowerCase()
+    const description = entry.description.toLowerCase()
+    const tags = entry.tags.join(' ').toLowerCase()
+    const body = entry.body.toLowerCase()
+
+    let score = 0
+    for (const term of terms) {
+      const inTitle = countMatches(title, term)
+      const inTags = countMatches(tags, term)
+      const inDescription = countMatches(description, term)
+      const inBody = countMatches(body, term)
+
+      if (!inTitle && !inTags && !inDescription && !inBody) return 0
+
+      score +=
+        inTitle * WEIGHTS.title +
+        inTags * WEIGHTS.tags +
+        inDescription * WEIGHTS.description +
+        Math.min(inBody, 5) * WEIGHTS.body
+
+      // A title starting with the term is almost always the thing being looked for.
+      if (title.startsWith(term)) score += WEIGHTS.title
+    }
+    return score
+  }
+
+  /** A window of body text around the first match, falling back to the description. */
+  function buildSnippet(entry: SearchEntry, terms: string[]) {
+    const source = entry.body || entry.description
+    if (!source) return ''
+
+    const lower = source.toLowerCase()
+    let at = -1
+    for (const term of terms) {
+      const found = lower.indexOf(term)
+      if (found !== -1 && (at === -1 || found < at)) at = found
+    }
+    if (at === -1) return source.slice(0, SNIPPET_RADIUS * 2).trim()
+
+    const start = Math.max(0, at - SNIPPET_RADIUS)
+    const end = Math.min(source.length, at + SNIPPET_RADIUS)
+    const lead = start > 0 ? '…' : ''
+    const tail = end < source.length ? '…' : ''
+    return lead + source.slice(start, end).trim() + tail
+  }
+
+  function highlight(text: string, terms: string[]) {
+    const escaped = escapeHtml(text)
+    if (terms.length === 0) return escaped
+    const pattern = new RegExp('(' + terms.map(escapeRegExp).join('|') + ')', 'gi')
+    return escaped.replace(pattern, '<mark>$1</mark>')
+  }
+
+  function formatDate(iso?: string) {
+    if (!iso) return ''
+    const date = new Date(iso)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  }
+
+  class SiteSearch extends HTMLElement {
+    private form = this.querySelector('form') as HTMLFormElement
+    private input = this.querySelector('#search-input') as HTMLInputElement
+    private status = this.querySelector('#search-status') as HTMLElement
+    private list = this.querySelector('#search-results') as HTMLUListElement
+
+    private entries: SearchEntry[] | null = null
+    private loading: Promise<SearchEntry[]> | null = null
+
+    connectedCallback() {
+      // Submitting would reload the page and throw away the results already shown.
+      this.form.addEventListener('submit', (event) => event.preventDefault())
+      this.input.addEventListener('input', () => void this.run())
+      this.input.addEventListener('keydown', (event) => this.onKeydown(event))
+
+      // Preload once the page is idle, so the first keystroke already has data.
+      const onIdle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 200))
+      onIdle(() => void this.load().catch(() => {}))
+
+      const initial = new URLSearchParams(window.location.search).get('q')
+      if (initial) {
+        this.input.value = initial
+        void this.run()
+      }
+      this.input.focus()
+    }
+
+    private load(): Promise<SearchEntry[]> {
+      if (this.entries) return Promise.resolve(this.entries)
+      this.loading ??= fetch('/search-index.json')
+        .then((response) => {
+          if (!response.ok) throw new Error('search index responded ' + response.status)
+          return response.json()
+        })
+        .then((data: { entries?: SearchEntry[] }) => {
+          this.entries = data.entries ?? []
+          return this.entries
+        })
+        .catch((error) => {
+          // Cleared so a later keystroke retries rather than reusing the failure.
+          this.loading = null
+          console.error('Could not load the search index.', error)
+          throw error
+        })
+      return this.loading
+    }
+
+    private currentTerms() {
+      return this.input.value.toLowerCase().split(/\s+/).filter(Boolean)
+    }
+
+    private async run() {
+      const terms = this.currentTerms()
+      this.syncUrl()
+
+      if (terms.length === 0) {
+        this.list.replaceChildren()
+        this.status.textContent = 'Start typing to search the site.'
+        return
+      }
+
+      if (!this.entries) {
+        this.status.textContent = 'Loading…'
+        try {
+          await this.load()
+        } catch {
+          this.list.replaceChildren()
+          this.status.textContent = 'Search is unavailable right now. Please try again shortly.'
+          return
+        }
+        // Another keystroke landed while the index loaded; that call renders instead.
+        if (this.currentTerms().join(' ') !== terms.join(' ')) return
+      }
+
+      if (!this.entries) return
+      this.render(this.rank(this.entries, terms), terms)
+    }
+
+    private rank(entries: SearchEntry[], terms: string[]): Scored[] {
+      return entries
+        .map((entry) => ({ entry, score: scoreEntry(entry, terms), snippet: '' }))
+        .filter((result) => result.score > 0)
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            (b.entry.date ?? '').localeCompare(a.entry.date ?? '') ||
+            a.entry.title.localeCompare(b.entry.title)
+        )
+        .slice(0, MAX_RESULTS)
+        .map((result) => ({ ...result, snippet: buildSnippet(result.entry, terms) }))
+    }
+
+    private render(results: Scored[], terms: string[]) {
+      if (results.length === 0) {
+        this.list.replaceChildren()
+        this.status.textContent = 'No results for “' + this.input.value.trim() + '”.'
+        return
+      }
+
+      this.status.textContent = results.length + (results.length === 1 ? ' result' : ' results')
+
+      const items = results.map(({ entry, snippet }) => {
+        const item = document.createElement('li')
+        const meta = [entry.kind, formatDate(entry.date)].filter(Boolean).join(' · ')
+        const excerpt = snippet
+          ? '<span class="mt-1.5 block line-clamp-2 text-sm text-muted-foreground">' +
+            highlight(snippet, terms) +
+            '</span>'
+          : ''
+
+        item.innerHTML =
+          '<a href="' +
+          escapeHtml(entry.url) +
+          '" class="search-result block rounded-xl border px-4 py-3 no-underline transition-colors hover:bg-muted">' +
+          '<span class="block font-medium text-foreground">' +
+          highlight(entry.title, terms) +
+          '</span>' +
+          '<span class="mt-0.5 block text-xs text-muted-foreground">' +
+          escapeHtml(meta) +
+          '</span>' +
+          excerpt +
+          '</a>'
+        return item
+      })
+
+      this.list.replaceChildren(...items)
+    }
+
+    /** Keeps the address bar in step, so a search can be shared or reloaded. */
+    private syncUrl() {
+      const url = new URL(window.location.href)
+      const value = this.input.value.trim()
+      if (value) url.searchParams.set('q', value)
+      else url.searchParams.delete('q')
+      window.history.replaceState(null, '', url)
+    }
+
+    private onKeydown(event: KeyboardEvent) {
+      const links = Array.from(this.list.querySelectorAll<HTMLAnchorElement>('a.search-result'))
+
+      if (event.key === 'Escape') {
+        this.input.value = ''
+        void this.run()
+        return
+      }
+      if (event.key === 'ArrowDown' && links.length > 0) {
+        event.preventDefault()
+        links[0].focus()
+        return
+      }
+      if (event.key === 'Enter' && links.length > 0) {
+        event.preventDefault()
+        links[0].click()
+      }
+    }
+  }
+
+  if (!customElements.get('site-search')) customElements.define('site-search', SiteSearch)
+</script>

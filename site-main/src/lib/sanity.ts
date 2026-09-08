@@ -1,6 +1,6 @@
-import { sanityClient as baseClient } from 'sanity:client'
 import createImageUrlBuilder from '@sanity/image-url'
 import { getReadingTime } from 'packages/pure/utils'
+import { sanityClient as baseClient } from 'sanity:client'
 
 /**
  * Read an env var at *request* time.
@@ -65,7 +65,7 @@ export function getHeadingsFromPortableText(blocks: any[]) {
       return {
         depth: parseInt(node.style.replace('h', '')),
         slug: slug,
-        text: text,
+        text: text
       }
     })
 }
@@ -103,6 +103,8 @@ export type WritingCollectionPost = {
   }
 }
 
+export type ProjectType = 'visualization' | 'program'
+
 export type ProjectCollectionItem = {
   id: string
   slug: string
@@ -110,7 +112,7 @@ export type ProjectCollectionItem = {
     title: string
     description: string
     featured: boolean
-    type: 'project' | 'visualization'
+    type: ProjectType
     longDescription?: string
     approach?: string
     github?: string
@@ -121,6 +123,8 @@ export type ProjectCollectionItem = {
       width: number
       height: number
       color?: string
+      /** Large rendition, for the visualization lightbox. */
+      full?: string
     }
   }
 }
@@ -159,7 +163,7 @@ function mapHeroImage(source: any, alt: string, width: number) {
     alt: source.alt ?? alt,
     width: dim?.width ?? width,
     height: dim?.height ?? 800,
-    color: source.color,
+    color: source.color
   }
 }
 
@@ -213,7 +217,7 @@ function mapPost(post: any): WritingCollectionPost {
       tags: normalizeTags(post),
       minutesRead: readStats.text,
       heroImage: mapHeroImage(post.heroImage, post.title, 900),
-      coverImage: mapHeroImage(post.heroImage, post.title, 400),
+      coverImage: mapHeroImage(post.heroImage, post.title, 400)
     }
   }
 }
@@ -282,7 +286,7 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
         title: project.title,
         description: project.description || '',
         featured: project.featured,
-        type: project.type ?? 'project',
+        type: (project.type ?? 'visualization') as ProjectType,
         longDescription: project.longDescription,
         approach: project.approach,
         github: project.github,
@@ -293,7 +297,9 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
               alt: project.image.alt || project.title,
               width: dim?.width ?? 400,
               height: dim?.height ?? 300,
-              color: project.image.color
+              color: project.image.color,
+              // Only ever fetched when a reader opens the lightbox.
+              full: sanityImageUrl(project.image, 1600)
             }
           : undefined
       }
@@ -391,7 +397,7 @@ export async function getBooks(): Promise<Book[]> {
     note: b.note,
     link: b.link,
     finishedAt: b.finishedAt ? toValidDate(b.finishedAt) : undefined,
-    coverImage: mapHeroImage(b.coverImage, b.title, 160)
+    coverImage: mapHeroImage(b.coverImage, b.title, 480)
   }))
 }
 

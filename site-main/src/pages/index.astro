@@ -3,15 +3,16 @@ import { Image } from 'astro:assets'
 
 import { PostPreview } from 'astro-pure/components/pages'
 import { getWritingCollection } from 'astro-pure/server'
-import { getSanityPosts } from '../lib/sanity'
 import { Button, Card, Icon, Label } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import Section from '@/components/home/Section.astro'
+import ProjectSection from '@/components/projects/ProjectSection.astro'
 import avatar from '@/assets/avatar.png'
 import portrait from '@/assets/portrait.jpg'
 import config from '@/site-config'
-import ProjectSection from '@/components/projects/ProjectSection.astro'
-import { getSanityProjects } from '../lib/sanity'
+
+import { buildProjectCards } from '../lib/projects'
+import { getSanityPosts, getSanityProjects } from '../lib/sanity'
 import { noStore } from '../lib/ssr'
 
 export const prerender = false
@@ -27,6 +28,11 @@ const SOCIAL_LABELS: Record<string, string> = {
 const social = config.footer.social || {}
 
 const projects = await getSanityProjects()
+
+// Same grouping as /projects: one Visualizations card, then featured programs.
+const projectCards = buildProjectCards(
+  projects.filter((p) => p.data.type === 'visualization' || p.data.featured)
+).slice(0, 4)
 
 // const MAX_POSTS = 10
 const allPostsByDate = await getSanityPosts()
@@ -44,7 +50,7 @@ const allPostsByDate = await getSanityPosts()
       />
 
       <div class='flex flex-col gap-y-1'>
-        <h1 class='text-3xl font-bold'>Hey! I'm Ebube</h1>
+        <h1 class='text-2xl font-medium'>Hey! I'm Ebube</h1>
         <p class='text-base text-foreground/70'>Pronounced /ae-boo-bae/</p>
       </div>
     </section>
@@ -53,7 +59,8 @@ const allPostsByDate = await getSanityPosts()
       <!-- About Section (no heading) -->
       <div class='flex flex-col gap-y-4'>
         <p class='text-base text-foreground/80'>
-          I use data to solve problems. My work spans statistical modelling, machine learning, and software development, and I am drawn to projects rooted in real-world systems.
+          I use data to solve problems. My work spans statistical modelling, machine learning, and
+          software development, and I am drawn to projects rooted in real-world systems.
         </p>
         {/* Social links, in place of the old "More about me" button */}
         <div class='flex items-center gap-x-4'>
@@ -74,19 +81,7 @@ const allPostsByDate = await getSanityPosts()
       </div>
 
       <Section title='Recent Projects' class='!flex-col !gap-y-5'>
-        <ProjectSection
-          projects={projects.filter(p => p.data.featured).slice(0, 5).map(p => ({
-            name: p.data.title,
-            description: p.data.description,
-            image: p.data.image,
-            links: [
-              p.data.github && { type: 'github', href: p.data.github },
-              p.data.liveSite && { type: 'site', href: p.data.liveSite }
-            ].filter(
-              (l): l is { type: string; href: string } => Boolean(l)
-            )
-          }))}
-        />
+        <ProjectSection projects={projectCards} />
         <Button title='All projects' class='w-fit' href='/projects' variant='ahead' />
       </Section>
 
@@ -104,8 +99,6 @@ const allPostsByDate = await getSanityPosts()
           </Section>
         )
       }
-      
-      
     </div>
   </main>
 </PageLayout>
