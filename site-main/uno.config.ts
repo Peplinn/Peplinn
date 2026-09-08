@@ -56,9 +56,18 @@ const typographyConfig = {
       transform: 'rotate(-15deg)',
       opacity: '0.1'
     },
-    // Table
+    // Table.
+    // Centred in the column the way a display equation is, rather than pinned to
+    // the left margin: `fit-content` shrinks the block to the table itself so
+    // `margin-inline: auto` has something to centre. `display: block` (kept from
+    // before) is what allows the overflow scroll, so a table wider than the column
+    // scrolls on its own instead of being clipped by `#content`'s overflow-hidden.
     table: {
       display: 'block',
+      width: 'fit-content',
+      'max-width': '100%',
+      'margin-inline': 'auto',
+      'overflow-x': 'auto',
       'font-size': '.875em'
     },
     'table tr': {

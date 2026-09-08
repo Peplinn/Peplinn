@@ -1,24 +1,29 @@
-import { Marked } from 'marked'
-import type { Tokens } from 'marked'
-import markedKatex from 'marked-katex-extension'
-import markedFootnote from 'marked-footnote'
-import { gfmHeadingId } from 'marked-gfm-heading-id'
-import { createHighlighter } from 'shiki'
 import {
   transformerNotationDiff,
   transformerNotationHighlight,
   transformerNotationWordHighlight
 } from '@shikijs/transformers'
 import GithubSlugger from 'github-slugger'
+import { Marked } from 'marked'
+import type { Tokens } from 'marked'
+import markedFootnote from 'marked-footnote'
+import { gfmHeadingId } from 'marked-gfm-heading-id'
+import markedKatex from 'marked-katex-extension'
+import { createHighlighter } from 'shiki'
+
+import { markedCallouts } from './callouts'
 
 const LANGS = [
-  'js', 'ts',
+  'js',
+  'ts',
   'markdown',
-  'html', 'css',
+  'html',
+  'css',
   'python',
   'bash',
   'json',
-  'yaml', 'yml',
+  'yaml',
+  'yml',
   'astro',
   'shell',
   'diff',
@@ -43,9 +48,7 @@ function getHighlighter() {
 function codeRenderer(hl: Highlighter) {
   return function code(token: Tokens.Code) {
     const requestedLang = token.lang || 'plaintext'
-    const language = hl.getLoadedLanguages().includes(requestedLang)
-      ? requestedLang
-      : 'plaintext'
+    const language = hl.getLoadedLanguages().includes(requestedLang) ? requestedLang : 'plaintext'
 
     const html = hl.codeToHtml(token.text, {
       lang: language,
@@ -117,6 +120,9 @@ async function createMarked() {
   const instance = new Marked()
   instance.use({ renderer: { code: codeRenderer(hl) } })
   instance.use(markedKatex({ throwOnError: false }))
+  // Registered before the built-in blockquote rule gets a look, so `> [!note]`
+  // becomes a callout while every other blockquote is left alone.
+  instance.use(markedCallouts())
   instance.use(gfmHeadingId())
   instance.use(markedFootnote())
   return instance
