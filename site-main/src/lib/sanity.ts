@@ -123,6 +123,8 @@ export type ProjectCollectionItem = {
       width: number
       height: number
       color?: string
+      /** Large rendition, for the visualization lightbox. */
+      full?: string
     }
   }
 }
@@ -295,7 +297,9 @@ export async function getSanityProjects(): Promise<ProjectCollectionItem[]> {
               alt: project.image.alt || project.title,
               width: dim?.width ?? 400,
               height: dim?.height ?? 300,
-              color: project.image.color
+              color: project.image.color,
+              // Only ever fetched when a reader opens the lightbox.
+              full: sanityImageUrl(project.image, 1600)
             }
           : undefined
       }

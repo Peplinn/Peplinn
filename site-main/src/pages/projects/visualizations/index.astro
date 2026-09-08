@@ -2,8 +2,13 @@
 import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
 import ProjectSection from '@/components/projects/ProjectSection.astro'
+import VisualizationLightbox from '@/components/projects/VisualizationLightbox.astro'
 
-import { isVisualization, toProjectCard, VISUALIZATIONS_DESCRIPTION } from '../../../lib/projects'
+import {
+  isVisualization,
+  toVisualizationCard,
+  VISUALIZATIONS_DESCRIPTION
+} from '../../../lib/projects'
 import { getSanityProjects } from '../../../lib/sanity'
 import { noStore } from '../../../lib/ssr'
 
@@ -16,7 +21,7 @@ const visualizations = projects.filter(isVisualization)
 
 if (visualizations.length === 0) return Astro.redirect('/projects')
 
-const cards = visualizations.map(toProjectCard)
+const cards = visualizations.map(toVisualizationCard)
 
 /**
  * Every visualization lives in one repository, so the shared root of the per-piece
@@ -43,4 +48,6 @@ const repoUrl = repoRoot(visualizations.find((p) => p.data.github)?.data.github)
   <div class='not-prose mt-8'>
     <ProjectSection projects={cards} />
   </div>
+
+  <VisualizationLightbox />
 </PageLayout>

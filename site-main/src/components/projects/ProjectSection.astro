@@ -17,6 +17,18 @@ interface Project {
    * ignored - an anchor cannot legally contain other anchors.
    */
   href?: string
+  /**
+   * Opens the full-size image in the page's lightbox instead of navigating. The
+   * card gets a stretched button over it, so the outbound `links` below still
+   * work: they sit above the button rather than inside it.
+   */
+  lightbox?: {
+    src: string
+    alt: string
+    title: string
+    description: string
+    github?: string
+  }
   /** Small line under the description, e.g. a count of grouped items. */
   meta?: string
   links?: {
@@ -48,27 +60,31 @@ const projectIconSet: Record<string, iconsType> = {
         <Tag
           href={project.href}
           class={cn(
-            'group/card relative overflow-hidden rounded-2xl border bg-background flex flex-col px-4 py-3 transition-colors ease-in-out hover:bg-muted',
-            project.href && 'no-underline'
+            'group/card relative flex flex-row gap-x-4 overflow-hidden rounded-2xl border bg-background px-4 py-3.5 transition-colors ease-in-out hover:bg-muted',
+            (project.href || project.lightbox) && 'no-underline'
           )}
         >
+          {/* `cover`, so the preview fills its box. `contain` fits the whole chart
+              in but letterboxes anything that is not 4:3, which reads as dead
+              space around the image. */}
           {project.image && (
             <img
-              class='cover-image absolute end-0 top-0 z-0 h-full w-3/5 object-cover opacity-50 transition-opacity duration-300 group-hover/card:opacity-70'
+              class='aspect-[4/3] w-24 flex-shrink-0 rounded-lg border bg-muted object-cover transition-opacity duration-300 group-hover/card:opacity-90 sm:w-28'
               src={project.image.src}
               alt={project.image.alt}
               width={project.image.width}
               height={project.image.height}
               loading='lazy'
+              decoding='async'
             />
           )}
 
-          <div class={cn('relative z-10 flex flex-col gap-y-1.5', project.image && 'w-3/5')}>
-            <div class='font-display line-clamp-1 font-medium text-foreground'>{project.name}</div>
+          <div class='flex min-w-0 flex-1 flex-col gap-y-1.5'>
+            <div class='font-display font-medium text-foreground'>{project.name}</div>
 
-            <p class='line-clamp-2 text-sm leading-snug text-muted-foreground'>
-              {project.description}
-            </p>
+            {/* Deliberately unclamped: the description is what tells a reader what
+                the project is, so the card grows rather than truncating it. */}
+            <p class='text-sm leading-snug text-muted-foreground'>{project.description}</p>
 
             {project.meta && (
               <div class='flex items-center gap-x-1 pt-0.5 text-xs text-muted-foreground transition-colors group-hover/card:text-foreground'>
@@ -82,37 +98,54 @@ const projectIconSet: Record<string, iconsType> = {
               </div>
             )}
 
-            {!project.href && project.links && project.links.length > 0 && (
-              <div class='flex flex-row items-center gap-x-2 pt-0.5'>
-                {project.links.map((link) => {
-                  const icon = projectIconSet[link.type]
-                  return (
-                    <a
-                      href={link.href}
-                      class='rounded-full bg-muted p-1 text-muted-foreground transition-colors hover:text-foreground'
-                      aria-label={link.type}
-                      target='_blank'
-                    >
-                      <Icon class='size-4' name={icon} />
-                    </a>
-                  )
-                })}
+            {(project.lightbox || (!project.href && project.links?.length)) && (
+              <div class='mt-auto flex flex-row items-center gap-x-3 pt-1.5'>
+                {/* The affordance the card used to lack. Always visible, since a
+                  hover-only cue tells a touch reader nothing. */}
+                {project.lightbox && (
+                  <span class='pointer-events-none z-20 flex items-center gap-x-1 text-xs font-medium text-muted-foreground transition-colors group-hover/card:text-primary'>
+                    <Icon class='size-3.5' name='search' />
+                    View
+                  </span>
+                )}
+
+                {!project.href && project.links && project.links.length > 0 && (
+                  <div class='relative z-20 flex flex-row items-center gap-x-2'>
+                    {project.links.map((link) => {
+                      const icon = projectIconSet[link.type]
+                      return (
+                        <a
+                          href={link.href}
+                          class='rounded-full bg-muted p-1 text-muted-foreground transition-colors hover:text-foreground'
+                          aria-label={link.type}
+                          target='_blank'
+                        >
+                          <Icon class='size-4' name={icon} />
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {/* Stretched hit area. Sits under the links above it (z-20) so those stay
+              clickable, and carries the accessible name for the whole card. */}
+          {project.lightbox && (
+            <button
+              type='button'
+              class='absolute inset-0 z-10 cursor-pointer'
+              aria-label={`View ${project.lightbox.title}`}
+              data-viz-src={project.lightbox.src}
+              data-viz-alt={project.lightbox.alt}
+              data-viz-title={project.lightbox.title}
+              data-viz-description={project.lightbox.description}
+              data-viz-github={project.lightbox.github}
+            />
+          )}
         </Tag>
       )
     })
   }
 </div>
-
-<style>
-  .cover-image {
-    mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
-    -webkit-mask-image: -webkit-linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 1) 100%
-    );
-  }
-</style>

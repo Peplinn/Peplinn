@@ -1,0 +1,184 @@
+---
+import { Icon } from 'astro-pure/user'
+---
+
+{/* One dialog per page, filled from whichever card was clicked. */}
+<dialog id='viz-lightbox' class='not-prose' aria-labelledby='viz-lightbox-title'>
+  <div class='viz-lightbox-panel'>
+    {/* Inline rather than <Icon>: astro-pure's set has no close glyph. */}
+    <button type='button' class='viz-lightbox-close' aria-label='Close'>
+      <svg
+        xmlns='http://www.w3.org/2000/svg'
+        width='20'
+        height='20'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        stroke-width='2'
+        stroke-linecap='round'
+        aria-hidden='true'
+      >
+        <path d='M18 6 6 18'></path><path d='m6 6 12 12'></path>
+      </svg>
+    </button>
+
+    <figure class='viz-lightbox-figure'>
+      <img id='viz-lightbox-image' src='' alt='' decoding='async' />
+      <figcaption class='viz-lightbox-caption'>
+        <h2 id='viz-lightbox-title' class='font-display text-base font-medium text-foreground'></h2>
+        <p id='viz-lightbox-description' class='text-sm text-muted-foreground'></p>
+        <a
+          id='viz-lightbox-github'
+          class='mt-1 inline-flex w-fit items-center gap-x-1.5 text-sm text-muted-foreground no-underline transition-colors hover:text-primary'
+          href=''
+          target='_blank'
+          rel='noopener'
+        >
+          <Icon class='size-4' name='github-circle' />
+          View on GitHub
+        </a>
+      </figcaption>
+    </figure>
+  </div>
+</dialog>
+
+<style>
+  #viz-lightbox {
+    max-width: min(64rem, 94vw);
+    max-height: 92vh;
+    padding: 0;
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) + 4px);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    overflow: hidden;
+  }
+
+  #viz-lightbox::backdrop {
+    background-color: rgb(0 0 0 / 0.65);
+    backdrop-filter: blur(2px);
+  }
+
+  #viz-lightbox:not([open]) {
+    display: none;
+  }
+
+  .viz-lightbox-panel {
+    position: relative;
+    display: flex;
+    max-height: 92vh;
+    flex-direction: column;
+  }
+
+  .viz-lightbox-close {
+    position: absolute;
+    inset-block-start: 0.6rem;
+    inset-inline-end: 0.6rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+    background-color: hsl(var(--background) / 0.85);
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+  .viz-lightbox-close:hover {
+    color: hsl(var(--foreground));
+  }
+
+  .viz-lightbox-figure {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    margin: 0;
+  }
+
+  /* The chart is the point of the overlay, so it takes whatever height is left
+     and the caption keeps its own. `contain` never crops a visualization. */
+  #viz-lightbox-image {
+    min-height: 0;
+    width: 100%;
+    flex: 1;
+    object-fit: contain;
+    background-color: hsl(var(--muted));
+  }
+
+  .viz-lightbox-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    border-top: 1px solid hsl(var(--border));
+    padding: 0.9rem 1.1rem;
+  }
+
+  /* Hidden rather than removed, so the caption keeps its shape between openings. */
+  .viz-lightbox-caption a[hidden],
+  .viz-lightbox-caption p:empty {
+    display: none;
+  }
+</style>
+
+<script>
+  function setupVisualizationLightbox() {
+    const dialog = document.getElementById('viz-lightbox') as HTMLDialogElement | null
+    if (!dialog) return
+
+    const image = document.getElementById('viz-lightbox-image') as HTMLImageElement
+    const title = document.getElementById('viz-lightbox-title') as HTMLElement
+    const description = document.getElementById('viz-lightbox-description') as HTMLElement
+    const github = document.getElementById('viz-lightbox-github') as HTMLAnchorElement
+    const close = dialog.querySelector('.viz-lightbox-close') as HTMLButtonElement
+
+    // `showModal` is what gives us focus trapping, Esc, and the backdrop. Without
+    // it (very old browsers) the card should still reach the visualization.
+    const canShowModal = typeof dialog.showModal === 'function'
+
+    document.querySelectorAll<HTMLButtonElement>('button[data-viz-src]').forEach((trigger) => {
+      trigger.addEventListener('click', (event) => {
+        const { vizSrc, vizAlt, vizTitle, vizDescription, vizGithub } = trigger.dataset
+        if (!vizSrc) return
+
+        if (!canShowModal) {
+          window.open(vizSrc, '_blank', 'noopener')
+          return
+        }
+
+        event.preventDefault()
+        image.src = vizSrc
+        image.alt = vizAlt ?? vizTitle ?? ''
+        title.textContent = vizTitle ?? ''
+        description.textContent = vizDescription ?? ''
+
+        if (vizGithub) {
+          github.href = vizGithub
+          github.hidden = false
+        } else {
+          github.removeAttribute('href')
+          github.hidden = true
+        }
+
+        dialog.showModal()
+      })
+    })
+
+    close?.addEventListener('click', () => dialog.close())
+
+    // A click on the backdrop lands on the dialog itself, never on the panel.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close()
+    })
+
+    // Drop the image so a reopen does not show the previous visualization while
+    // the new one downloads.
+    dialog.addEventListener('close', () => {
+      image.removeAttribute('src')
+    })
+  }
+
+  setupVisualizationLightbox()
+  document.addEventListener('astro:after-swap', setupVisualizationLightbox)
+</script>
