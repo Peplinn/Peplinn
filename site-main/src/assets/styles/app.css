@@ -12,11 +12,11 @@
   font-display: swap;
 }
 html {
-  font-family: 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   font-size: 16.5px;
 }
 
-/* Headings and UI chrome keep a distinct display face; body copy stays Work Sans. */
+/* Headings and UI chrome keep a distinct display face; body copy stays Albert Sans. */
 h1,
 h2,
 h3,
@@ -24,8 +24,19 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: 'Autour One', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
+}
+
+/* Dates and small metadata.
+   These used to be inconsistent: FormattedDate hardcoded `font-mono` while Hero
+   overrode it with `font-sans` (UnoCSS's *system* stack, not the body face), so
+   article dates and list dates rendered in two different fonts, neither of them
+   the site's own. This is the single place that decides.
+   `tabular-nums` keeps the date column in post lists vertically aligned. */
+.font-meta {
+  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Site chrome: brand name, nav links, buttons, footer.
@@ -35,7 +46,7 @@ h6,
 header,
 header-component,
 footer {
-  font-family: 'Autour One', 'Work Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
