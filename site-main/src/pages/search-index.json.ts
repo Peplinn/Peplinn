@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro'
 
 import { isVisualization, VISUALIZATIONS_HREF } from '../lib/projects'
 import { getSanityPosts, getSanityProjects } from '../lib/sanity'
+import { CACHE, cacheable } from '../lib/ssr'
 
 export const prerender = false
 
@@ -72,12 +73,10 @@ export const GET: APIRoute = async () => {
     }))
   ]
 
-  return new Response(JSON.stringify({ entries }), {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      // Same freshness contract as the pages themselves: an edit in Sanity shows up
-      // on the next request rather than after a rebuild.
-      'Cache-Control': 'public, max-age=0, must-revalidate'
-    }
-  })
+  const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8' })
+  // Same freshness contract as the pages themselves, and the same edge caching.
+  // This is the largest single payload the site serves, so it benefits most.
+  cacheable(headers, CACHE.data)
+
+  return new Response(JSON.stringify({ entries }), { headers })
 }

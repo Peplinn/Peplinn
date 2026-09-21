@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets'
 import type { HTMLTag, Polymorphic } from 'astro/types'
 
 import { cn } from '../../utils'
@@ -20,20 +19,24 @@ type PreviewPost = {
   }
 }
 
-
-
 type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
   post: PreviewPost
   detailed?: boolean
+  /** The first card is above the fold; the rest shouldn't block on their image. */
+  eager?: boolean
   class?: string
 }
 
-
-const { as: Tag = 'div', post, detailed = false, class: className } = Astro.props
+const { as: Tag = 'div', post, detailed = false, eager = false, class: className } = Astro.props
 
 const { id, data } = post
 
-const minutesRead = data.minutesRead || "unknown read";
+// Deliberately NOT astro:assets `<Image>`: these are remote Sanity URLs on an
+// on-demand route, so each one cost a second serverless invocation through
+// `/_image` to re-process what the Sanity CDN had already optimised.
+const hero = data.heroImage
+
+const minutesRead = data.minutesRead || 'unknown read'
 const postDate = data.updatedDate ?? data.publishDate
 ---
 
@@ -58,12 +61,15 @@ const postDate = data.updatedDate ?? data.publishDate
     data-astro-prefetch
   >
     {
-      detailed && data.heroImage && (
-        <Image
-          alt={data.heroImage.alt || data.title}
+      detailed && hero && (
+        <img
+          src={hero.src}
+          alt={hero.alt || data.title}
+          width={hero.width}
+          height={hero.height}
           class='cover-image absolute end-0 top-0 z-0 h-2/3 w-full rounded-2xl object-cover opacity-50 transition-opacity duration-300 group-hover/card:opacity-70 md:h-full md:w-3/5'
-          loading='eager'
-          {...data.heroImage}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding='async'
         />
       )
     }

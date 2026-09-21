@@ -10,11 +10,11 @@ import {
   VISUALIZATIONS_DESCRIPTION
 } from '../../../lib/projects'
 import { getSanityProjects } from '../../../lib/sanity'
-import { noStore } from '../../../lib/ssr'
+import { CACHE, cacheable } from '../../../lib/ssr'
 
 export const prerender = false
 
-noStore(Astro.response.headers)
+cacheable(Astro.response.headers, CACHE.stable)
 
 const projects = await getSanityProjects()
 const visualizations = projects.filter(isVisualization)

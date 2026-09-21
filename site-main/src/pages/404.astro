@@ -2,6 +2,11 @@
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
+// On-demand rather than prerendered so SSR routes can `Astro.rewrite('/404')`
+// into it and answer a real 404 status. Rewriting into a prerendered route is a
+// build-time error in Astro.
+export const prerender = false
+
 const meta = {
   description: 'Not found',
   title: '404'

@@ -1,11 +1,14 @@
 ---
-import { Image } from 'astro:assets'
 import type { InferEntrySchema } from 'astro:content'
 
 import { FormattedDate, Icon } from '../user'
 
 interface Props {
-  data: InferEntrySchema<'writing'>
+  // Hero images come from Sanity, where `src` is a CDN URL string - not the
+  // `ImageMetadata` object the local-collection schema describes.
+  data: Omit<InferEntrySchema<'writing'>, 'heroImage'> & {
+    heroImage?: { src: string; alt?: string; width?: number; height?: number; color?: string }
+  }
   remarkPluginFrontmatter: Record<string, unknown>
 }
 
@@ -58,25 +61,32 @@ const dateTimeOptions: Intl.DateTimeFormatOptions = {
   </div>
 </div>
 
-
-
 {
   heroImage && (
     <div class='hero-image relative mt-6'>
-      <Image
+      {/* Plain <img>, not astro:assets: these are remote Sanity URLs on an
+          on-demand route, so each <Image> cost a serverless sharp invocation to
+          redo work the Sanity CDN had already done - and converting format that
+          way flattens an animated GIF to its first frame. */}
+      <img
+        src={heroImage.src}
         alt={heroImage.alt || title}
+        width={heroImage.width}
+        height={heroImage.height}
         class='cover-image relative z-10 h-48 w-full max-w-[65ch] rounded-2xl object-cover'
         fetchpriority='high'
         loading='eager'
-        {...heroImage}
+        decoding='async'
       />
-      <Image
-        alt='Blur image'
-        fetchpriority='high'
-        loading='eager'
+      {/* Same bytes as above, so the browser serves this one from cache. */}
+      <img
+        src={heroImage.src}
+        alt=''
+        aria-hidden='true'
         id='blurImage'
         class='absolute end-0 top-4 z-0 mt-0 h-48 max-w-[65ch] rounded-3xl opacity-60 transition-opacity duration-300'
-        {...heroImage}
+        loading='eager'
+        decoding='async'
       />
     </div>
   )

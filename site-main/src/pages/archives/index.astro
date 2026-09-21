@@ -4,11 +4,11 @@ import { groupSanityPostsByYear } from '../../lib/sanity-helpers'
 import { getSanityPosts, type WritingCollectionPost } from '../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
-import { noStore } from '../../lib/ssr'
+import { CACHE, cacheable } from '../../lib/ssr'
 
 export const prerender = false
 
-noStore(Astro.response.headers)
+cacheable(Astro.response.headers, CACHE.listing)
 
 const allPosts = await getSanityPosts()
 const allPostsByDate = [...allPosts].sort(
