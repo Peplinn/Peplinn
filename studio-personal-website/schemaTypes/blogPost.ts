@@ -10,6 +10,27 @@ export const blogPost = defineType({
   fields: [
     ...baseContentFields,
 
+    // Presentation tier, not structure. Guides are a separate document type
+    // because they carry ordered children and live under their own URL - folding
+    // them in here would mean a conditional field, and Sanity keeps the data in
+    // hidden fields, so reclassifying a guide would silently orphan its steps.
+    defineField({
+      name: 'type',
+      title: 'Kind of writing',
+      type: 'string',
+      description:
+        'Decides how prominently this is presented on the writing page. Articles get the full card treatment; notes are a single line.',
+      initialValue: 'article',
+      options: {
+        list: [
+          {title: 'Article - a long-form piece', value: 'article'},
+          {title: 'Note - a short, personal one', value: 'note'}
+        ],
+        layout: 'radio'
+      },
+      validation: r => r.required()
+    }),
+
     defineField({
       name: 'heroImage',
       title: 'Hero image',

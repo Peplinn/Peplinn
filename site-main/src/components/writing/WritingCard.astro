@@ -1,0 +1,150 @@
+---
+import { Button, FormattedDate, Icon } from 'astro-pure/user'
+
+import type { WritingCollectionPost } from '../../lib/sanity'
+import { KINDS } from '../../lib/sanity-helpers'
+
+/**
+ * One card per piece of writing, with the richness of the treatment tracking the
+ * weight of the piece: an article earns imagery and a description, a note is a
+ * single line. Everything is still a card, so the page reads as one system.
+ *
+ * Separate from astro-pure's `PostPreview` rather than a rewrite of it, because
+ * that component is still used unmodified by /archives and the tag pages.
+ */
+interface Props {
+  post: WritingCollectionPost
+  /** Only the first card is plausibly above the fold. */
+  eager?: boolean
+}
+
+const { post, eager = false } = Astro.props
+const { data } = post
+const kind = KINDS[data.kind]
+
+const href = `/writing/${post.slug}`
+const hero = data.kind === 'article' ? data.heroImage : undefined
+const showDescription = data.kind !== 'note' && !!data.description
+---
+
+<li
+  class:list={[
+    'writing-card group/card relative flex flex-col rounded-2xl border bg-background transition-colors ease-in-out hover:bg-muted',
+    data.kind === 'note' ? 'px-5 py-2.5' : 'px-5 py-4 max-sm:px-4'
+  ]}
+  style={hero?.color &&
+    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)));
+    --card-highlight-bg:hsl(from ${hero.color} h s l/20%)`}
+>
+  <a
+    class:list={[
+      'group/link z-10 flex w-full flex-col transition-colors hover:text-primary',
+      hero && 'max-md:pt-24'
+    ]}
+    {href}
+    data-astro-prefetch
+  >
+    {
+      hero && (
+        <img
+          src={hero.src}
+          alt={hero.alt || data.title}
+          width={hero.width}
+          height={hero.height}
+          class='cover-image absolute end-0 top-0 z-0 h-2/3 w-full rounded-2xl object-cover opacity-50 transition-opacity duration-300 group-hover/card:opacity-70 md:h-full md:w-3/5'
+          loading={eager ? 'eager' : 'lazy'}
+          decoding='async'
+        />
+      )
+    }
+
+    <div class='z-10 flex items-center gap-x-3'>
+      {/* The mark is the type label - the legend at the top of the page is the key. */}
+      <Icon
+        name={kind.icon}
+        class='size-4 shrink-0 text-muted-foreground transition-colors group-hover/link:text-primary'
+        aria-hidden='true'
+      />
+      <span class='sr-only'>{kind.label}:</span>
+
+      <span class='flex-grow font-display font-medium'>
+        {data.draft && <span class='text-red-500'>(Draft) </span>}
+        {data.title}
+      </span>
+
+      <FormattedDate class='shrink-0 text-xs text-muted-foreground' date={data.publishDate} />
+    </div>
+
+    {
+      showDescription && (
+        <p
+          class:list={[
+            'z-10 line-clamp-2 ps-7 pt-1 text-sm text-muted-foreground sm:line-clamp-3',
+            hero && 'sm:me-24'
+          ]}
+        >
+          {data.description}
+        </p>
+      )
+    }
+
+    {
+      data.kind !== 'note' && (
+        <span class='z-10 ps-7 pt-1.5 text-xs italic text-muted-foreground'>
+          {data.minutesRead}
+        </span>
+      )
+    }
+  </a>
+
+  {
+    data.kind !== 'note' && !!data.tags.length && (
+      <ul class='tag-list z-10 mt-2 flex flex-wrap gap-2 ps-7'>
+        {data.tags.map((tag: string) => (
+          <li>
+            <Button title={tag} href={`/tags/${tag}`} variant='pill' />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</li>
+
+<style>
+  /* An article's card borrows its own hero colour for the hover state. */
+  .writing-card {
+    --card-highlight-final: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
+  }
+  .writing-card:hover {
+    &,
+    & .tag-list a {
+      background-color: var(
+        --card-highlight-bg,
+        hsl(var(--muted) / var(--un-bg-opacity, 1))
+      ) !important;
+    }
+    & > a,
+    & .tag-list a:hover {
+      color: var(--card-highlight-final) !important;
+    }
+  }
+  .cover-image {
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+    -webkit-mask-image: -webkit-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 1) 100%
+    );
+  }
+
+  @media (max-width: 768px) {
+    .cover-image {
+      mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
+      -webkit-mask-image: -webkit-linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 100%
+      );
+    }
+  }
+</style>
