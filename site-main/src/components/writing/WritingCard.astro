@@ -1,5 +1,5 @@
 ---
-import { FormattedDate, Icon } from 'astro-pure/user'
+import { Button, FormattedDate, Icon } from 'astro-pure/user'
 
 import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
 import { KINDS } from '../../lib/sanity-helpers'
@@ -7,14 +7,15 @@ import { KINDS } from '../../lib/sanity-helpers'
 /**
  * One tile in the writing grid.
  *
- * Every card keeps the same shape so the grid stays regular; what varies is the
- * panel at the top. A post with a hero image shows it, and everything else shows
- * its type mark large on a tinted panel - which is what keeps an image-less card
- * from reading as broken next to an image one, and gives the marks a job beyond
- * decoration.
+ * Hierarchy is carried by **size** - an article occupies two cells, everything
+ * else one - with a small mark and word in the meta line to make the kind
+ * explicit. Earlier attempts tied identity to whether a post had a hero image,
+ * which broke as soon as notes had images too: it made the mark an exception
+ * rather than a system. Now every card shows its image and every card names its
+ * kind.
  *
  * Separate from astro-pure's `PostPreview` rather than a rewrite of it, because
- * that component is still used unmodified by /archives and the tag pages.
+ * that component is still used unmodified by the tag pages.
  */
 interface Props {
   post: WritingCollectionPost
@@ -22,36 +23,35 @@ interface Props {
   eager?: boolean
 }
 
-/**
- * The tier ladder, as chrome rather than content: an article sits lifted off the
- * page, a guide is a plain outline, a note recedes into a filled panel. Articles
- * carry the only resting shadow anywhere on the site, which is what makes them
- * read as raised rather than merely thicker.
- */
+/** Articles are wider, thicker-edged, and carry the site's only resting shadow. */
 const TIERS = {
-  article: 'border-2 shadow-sm bg-background hover:bg-muted',
+  article: 'sm:col-span-2 border-2 shadow-sm bg-background hover:bg-muted',
   guide: 'border bg-background hover:bg-muted',
-  note: 'border bg-muted/40 hover:bg-muted'
+  note: 'border bg-background hover:bg-muted'
 } as const satisfies Record<PostKind, string>
+
+/** Enough to signal the subject, few enough not to wrap a one-cell card. */
+const MAX_TAGS = 3
 
 const { post, eager = false } = Astro.props
 const { data } = post
 const kind = KINDS[data.kind]
-
-// Imagery is part of the tier, not a property of the document. A note that
-// happens to carry a hero image would otherwise render as an article.
-const hero = data.kind === 'article' ? data.heroImage : undefined
+const hero = data.heroImage
 ---
 
 <li
   class:list={[
-    'writing-card group/card overflow-hidden rounded-2xl transition-all ease-in-out',
+    'writing-card group/card flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
     TIERS[data.kind]
   ]}
   style={hero?.color &&
     `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
 >
-  <a class='flex h-full flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
+  <a class='flex flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
+    {
+      /* Fixed height rather than an aspect ratio, so panels line up across a row
+        even though an article's card is twice as wide. */
+    }
     {
       hero ? (
         <img
@@ -59,24 +59,21 @@ const hero = data.kind === 'article' ? data.heroImage : undefined
           alt={hero.alt || data.title}
           width={hero.width}
           height={hero.height}
-          class='aspect-[3/2] w-full border-b object-cover transition-opacity duration-300 group-hover/card:opacity-90'
+          class='h-40 w-full border-b object-cover transition-opacity duration-300 group-hover/card:opacity-90 sm:h-44'
           loading={eager ? 'eager' : 'lazy'}
           decoding='async'
         />
       ) : (
         <div
-          class='flex aspect-[3/2] w-full items-center justify-center border-b bg-muted/60'
+          class='flex h-40 w-full items-center justify-center border-b bg-muted/60 sm:h-44'
           aria-hidden='true'
         >
-          <Icon
-            name={kind.icon}
-            class='size-12 text-muted-foreground/45 transition-colors duration-300 group-hover/card:text-muted-foreground/70'
-          />
+          <Icon name={kind.icon} class='size-12 text-muted-foreground/45' />
         </div>
       )
     }
 
-    <div class='flex flex-grow flex-col gap-y-1.5 px-4 py-3.5'>
+    <div class='flex flex-col gap-y-1.5 px-4 pb-2 pt-3.5'>
       <span class='card-title font-display font-medium transition-colors'>
         {data.draft && <span class='text-red-500'>(Draft) </span>}
         {data.title}
@@ -88,15 +85,35 @@ const hero = data.kind === 'article' ? data.heroImage : undefined
         )
       }
 
-      {/* Pushed to the bottom so the meta line sits flush across a ragged row. */}
-      <div class='mt-auto flex items-center gap-x-2 pt-2 text-xs text-muted-foreground'>
-        <span class='sr-only'>{kind.label}:</span>
+      <div class='flex items-center gap-x-2 pt-1 text-xs text-muted-foreground'>
+        <Icon name={kind.icon} class='size-3.5 shrink-0' aria-hidden='true' />
+        <span>{kind.label}</span>
+        <span aria-hidden='true'>·</span>
         <FormattedDate date={data.publishDate} />
-        {data.kind !== 'note' && <span aria-hidden='true'>·</span>}
-        {data.kind !== 'note' && <span>{data.minutesRead}</span>}
       </div>
     </div>
   </a>
+
+  {
+    /* Outside the card link: a link inside a link is invalid, and these go
+      somewhere else entirely. */
+  }
+  {
+    !!data.tags.length && (
+      <ul class='tag-list mt-auto flex flex-wrap gap-1.5 px-4 pb-3.5 pt-1'>
+        {data.tags.slice(0, MAX_TAGS).map((tag: string) => (
+          <li>
+            <Button
+              title={tag}
+              href={`/tags/${tag}`}
+              variant='pill'
+              class='!px-2 !py-0.5 !text-xs'
+            />
+          </li>
+        ))}
+      </ul>
+    )
+  }
 </li>
 
 <style>
