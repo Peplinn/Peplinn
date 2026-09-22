@@ -48,10 +48,7 @@ export function parseSelectedKinds(searchParams: URLSearchParams): PostKind[] {
 
 /** Totals per kind, for the counts beside each row of the filter checklist. */
 export function countByKind(posts: WritingCollectionPost[]): Record<PostKind, number> {
-  const counts = Object.fromEntries(POST_KINDS.map((kind) => [kind, 0])) as Record<
-    PostKind,
-    number
-  >
+  const counts = Object.fromEntries(POST_KINDS.map((kind) => [kind, 0])) as Record<PostKind, number>
   posts.forEach((post) => {
     counts[post.data.kind] += 1
   })

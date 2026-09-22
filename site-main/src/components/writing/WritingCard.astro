@@ -27,13 +27,14 @@ interface Props {
  * evenly. Articles used to span two of three columns, which read well until two
  * of them landed in the same row and left a third cell stranded empty.
  *
- * Which leaves elevation to carry the tier on its own: an article is
- * thicker-edged and holds the site's only resting shadow.
+ * With size gone, weight carries the tier instead, in three steps: an article is
+ * filled, thick-edged and railed; a guide is a plain outline; a note has neither
+ * border nor fill and sits flat on the page.
  */
 const TIERS = {
-  article: 'border-2 shadow-sm bg-background hover:bg-muted',
+  article: 'border-2 shadow-sm bg-muted/60 hover:bg-muted',
   guide: 'border bg-background hover:bg-muted',
-  note: 'border bg-background hover:bg-muted'
+  note: 'hover:bg-muted'
 } as const satisfies Record<PostKind, string>
 
 /**
@@ -64,6 +65,13 @@ const { post, eager = false } = Astro.props
 const { data } = post
 const kind = KINDS[data.kind]
 const hero = data.heroImage
+
+// The hero's extracted colour already drove the hover title; the rail puts it to
+// work at rest too, so every article is tinted a little differently. Posts with
+// no hero image fall back to the site accent via the CSS custom property default.
+const cardStyle = hero?.color
+  ? `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)));--card-rail:${hero.color}`
+  : undefined
 ---
 
 <li
@@ -71,9 +79,11 @@ const hero = data.heroImage
     'writing-card group/card flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
     TIERS[data.kind]
   ]}
-  style={hero?.color &&
-    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
+  style={cardStyle}
 >
+  {/* Articles only - the heaviest step of the three. */}
+  {data.kind === 'article' && <span class='card-rail h-[3px] w-full shrink-0' aria-hidden='true' />}
+
   <a class='flex flex-1 flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
     <div class:list={['card-panel', PANEL_SIZE, !hero && 'bg-muted/60']}>
       {
@@ -146,6 +156,12 @@ const hero = data.heroImage
   /* An article's card borrows its own hero colour for the title on hover. */
   .writing-card:hover .card-title {
     color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
+  }
+
+  /* Falls back to the site accent, so an article with no hero image still gets a
+     rail rather than an invisible strip. */
+  .card-rail {
+    background-color: var(--card-rail, hsl(var(--primary) / var(--un-bg-opacity, 1)));
   }
 
   /* The image dissolves into the card instead of stopping at a rule. Doing this

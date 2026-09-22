@@ -41,8 +41,10 @@ const kind = KINDS[data.kind]
     />
     <span class='sr-only'>{kind.label}:</span>
 
-    {/* Wraps rather than truncating - a title is the only thing identifying the
-        post here, so cutting it off costs more than the extra line. */}
+    {
+      /* Wraps rather than truncating - a title is the only thing identifying the
+        post here, so cutting it off costs more than the extra line. */
+    }
     <span class='font-display'>{data.title}</span>
   </a>
 </li>

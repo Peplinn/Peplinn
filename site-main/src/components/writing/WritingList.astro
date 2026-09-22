@@ -48,15 +48,24 @@ const paginationProps = {
 <PageLayout {meta}>
   <Button title='Home' href='/' variant='back' />
   <main class='mt-6 lg:mt-10'>
-    <div id='content-header' class='animate'>
+    {
+      /* `relative z-30` is what lets the type dropdown overlap the posts below.
+        `.animate` ends on a transform with `fill-mode: forwards`, so this header
+        and the posts section are each a stacking context - leaving the dropdown
+        trapped in the earlier one and painted under the later one, whatever
+        z-index it set for itself. */
+    }
+    <div id='content-header' class='animate relative z-30'>
       {
         /* No legend: each card names its own kind in words beside the mark, so a
           separate key would only repeat what the cards already say. */
       }
       <h1 class='mb-4 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>
 
-      {/* Outside the empty-state branch below, deliberately: filtering down to
-          nothing has to leave you something to un-filter with. */}
+      {
+        /* Outside the empty-state branch below, deliberately: filtering down to
+          nothing has to leave you something to un-filter with. */
+      }
       <div class='mb-6'>
         <TypeFilter selected={selectedKinds} counts={kindCounts} />
       </div>
