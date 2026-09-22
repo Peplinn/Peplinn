@@ -5,8 +5,13 @@ import type { WritingCollectionPost } from '../../lib/sanity'
 import { KINDS } from '../../lib/sanity-helpers'
 
 /**
- * A single line, no bounding box - for places that list writing without being the
- * writing page. The leading mark is what says which kind of piece it is.
+ * A single line, no bounding box - for places that list writing without being
+ * the writing page itself. Date first so the dates form a column down the left,
+ * then the mark saying which kind of piece it is, then the title.
+ *
+ * `items-baseline` rather than centring: a long title wraps to two lines, and
+ * the date should stay level with the first of them rather than drifting to the
+ * middle of the block.
  */
 interface Props {
   post: WritingCollectionPost
@@ -19,25 +24,25 @@ const kind = KINDS[data.kind]
 
 <li>
   <a
-    class='group flex items-center gap-x-3 py-1.5 transition-colors hover:text-primary'
+    class='group flex items-baseline gap-x-3 py-1.5 transition-colors hover:text-primary'
     href={`/writing/${post.slug}`}
     data-astro-prefetch
   >
+    {/* Fixed width so the marks and titles line up regardless of date length. */}
+    <FormattedDate
+      class='w-[5.5rem] shrink-0 font-meta text-xs text-muted-foreground'
+      date={data.publishDate}
+    />
+
     <Icon
       name={kind.icon}
-      class='size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary'
+      class='size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-colors group-hover:text-primary'
       aria-hidden='true'
     />
     <span class='sr-only'>{kind.label}:</span>
 
-    <span class='truncate font-display'>{data.title}</span>
-
-    {
-      /* Lets the date sit at the far edge so titles of different lengths still
-        scan as one column. */
-    }
-    <span class='h-px min-w-4 flex-1 bg-border' aria-hidden='true'></span>
-
-    <FormattedDate class='shrink-0 text-xs text-muted-foreground' date={data.publishDate} />
+    {/* Wraps rather than truncating - a title is the only thing identifying the
+        post here, so cutting it off costs more than the extra line. */}
+    <span class='font-display'>{data.title}</span>
   </a>
 </li>

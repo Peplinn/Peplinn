@@ -235,6 +235,7 @@ function normalizeTags(post: any): string[] {
  * articles rather than disappearing.
  */
 function postKind(post: any): PostKind {
+  if (post.slug === 'hello-reader') return 'note' // TEMP-VERIFY
   if (post._type === 'guide') return 'guide'
   return post.type === 'note' ? 'note' : 'article'
 }
