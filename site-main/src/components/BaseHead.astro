@@ -5,7 +5,7 @@ import config from '@/site-config'
 
 type Props = SiteMeta
 
-const { articleDate, description, ogImage, title } = Astro.props
+const { articleDate, description, noindex, ogImage, title } = Astro.props
 
 const siteTitle = `${title} ${config.titleDelimiter} ${config.title}`
 const canonicalURL = new URL(Astro.url.pathname, Astro.site)
@@ -16,6 +16,12 @@ const socialImageURL = new URL(ogImage ? ogImage : '/images/social-card.png', As
 <meta content='width=device-width, initial-scale=1.0, shrink-to-fit=no' name='viewport' />
 <meta content='IE=edge' http-equiv='X-UA-Compatible' />
 <title>{siteTitle}</title>
+
+{
+  /* Live at its URL but not ready to be found - keeps it out of search
+    results and off crawled link graphs without gating access behind auth. */
+}
+{noindex && <meta content='noindex, nofollow' name='robots' />}
 
 {/* Icons / Favicon */}
 <link rel='apple-touch-icon' sizes='180x180' href='/favicon/apple-touch-icon.png' />

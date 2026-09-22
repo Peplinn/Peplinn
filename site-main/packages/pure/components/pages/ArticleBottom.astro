@@ -11,13 +11,18 @@ type MinimalPost = {
 type Props = {
   id: string
   collections: MinimalPost[]
+  /**
+   * Overrides the auto-derived `/<first-segment>` link base. Needed wherever the
+   * real base is more than one segment deep, e.g. `/guides/<guide>/<step>` - the
+   * derived base there would be `/guides`, producing a broken `/guides/<step>`.
+   */
+  basePath?: string
   class?: string
 }
 
-
 // Get the requested entry
-const { id, collections, class: className } = Astro.props
-const path = Astro.url.pathname.split('/').slice(0, 2).join('/')
+const { id, collections, basePath, class: className } = Astro.props
+const path = basePath ?? Astro.url.pathname.split('/').slice(0, 2).join('/')
 
 // Get the next and prev entries (modulo to wrap index)
 const index = collections.findIndex((x) => x.id === id)

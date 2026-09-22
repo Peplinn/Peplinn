@@ -1,0 +1,60 @@
+---
+import { ArticleBottom } from 'astro-pure/components/pages'
+import { Button, FormattedDate, Icon } from 'astro-pure/user'
+import PageLayout from '@/layouts/BaseLayout.astro'
+
+import { renderMarkdown } from '../../../lib/markdown'
+import { getGuideBySlug } from '../../../lib/sanity'
+import { KINDS } from '../../../lib/sanity-helpers'
+import { CACHE, cacheable } from '../../../lib/ssr'
+
+export const prerender = false
+
+cacheable(Astro.response.headers, CACHE.post)
+
+const { guide: guideSlug, step: stepSlug } = Astro.params
+
+// Steps only exist inside a guide - there's no standalone step lookup, so
+// fetching the guide is the only query this page needs either way.
+const guide = await getGuideBySlug(guideSlug!)
+if (!guide) return Astro.rewrite('/404')
+
+const step = guide.steps.find((s) => s.slug === stepSlug)
+if (!step) return Astro.rewrite('/404')
+
+const html = await renderMarkdown(step.content)
+
+const meta = {
+  description: step.description || guide.description,
+  title: `${step.title} · ${guide.title}`
+}
+
+// `ArticleBottom` derives prev/next from the URL by default, which breaks two
+// levels deep - hence `basePath`. `collections` only needs an id and a title.
+const stepCollection = guide.steps.map((s) => ({ id: s.slug, data: { title: s.title } }))
+---
+
+<PageLayout {meta}>
+  <Button title={guide.title} href={`/guides/${guideSlug}`} variant='back' />
+
+  <main class='mt-6 lg:mt-10'>
+    <div id='content-header' class='animate'>
+      <div class='mb-2 flex items-center gap-x-2 text-sm text-muted-foreground'>
+        <Icon name={KINDS.guide.icon} class='size-4' aria-hidden='true' />
+        <span>{guide.title}</span>
+        <span aria-hidden='true'>·</span>
+        <FormattedDate date={guide.publishDate} />
+      </div>
+      <h1 class='mb-3 text-3xl font-medium'>{step.title}</h1>
+    </div>
+
+    <article class='prose prose-pure dark:prose-invert max-w-none' set:html={html} />
+
+    <ArticleBottom
+      id={stepSlug!}
+      collections={stepCollection}
+      basePath={`/guides/${guideSlug}`}
+      class='mt-10'
+    />
+  </main>
+</PageLayout>

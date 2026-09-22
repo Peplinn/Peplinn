@@ -9,6 +9,8 @@ export interface SiteMeta {
   description?: string
   ogImage?: string | undefined
   articleDate?: string | undefined
+  /** Keeps a page out of search results while it's live but not ready to be found. */
+  noindex?: boolean
 }
 
 export type CardListData = {

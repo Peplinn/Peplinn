@@ -1,0 +1,94 @@
+---
+import { Button, FormattedDate, Icon } from 'astro-pure/user'
+import PageLayout from '@/layouts/BaseLayout.astro'
+
+import { renderMarkdown } from '../../../lib/markdown'
+import { getGuideBySlug } from '../../../lib/sanity'
+import { KINDS } from '../../../lib/sanity-helpers'
+import { CACHE, cacheable } from '../../../lib/ssr'
+
+export const prerender = false
+
+cacheable(Astro.response.headers, CACHE.post)
+
+const { guide: guideSlug } = Astro.params
+
+const guide = await getGuideBySlug(guideSlug!)
+if (!guide) return Astro.rewrite('/404')
+
+const html = guide.content ? await renderMarkdown(guide.content) : ''
+
+const meta = {
+  description: guide.description || `A guide in ${guide.steps.length} steps.`,
+  title: guide.title
+}
+---
+
+<PageLayout {meta}>
+  <Button title='Home' href='/' variant='back' />
+
+  <main class='mt-6 lg:mt-10'>
+    <div id='content-header' class='animate'>
+      <div class='mb-2 flex items-center gap-x-2 text-sm text-muted-foreground'>
+        <Icon name={KINDS.guide.icon} class='size-4' aria-hidden='true' />
+        <span>{KINDS.guide.label}</span>
+        <span aria-hidden='true'>·</span>
+        <FormattedDate date={guide.publishDate} />
+      </div>
+      <h1 class='mb-3 text-3xl font-medium'>{guide.title}</h1>
+      {guide.description && <p class='text-muted-foreground'>{guide.description}</p>}
+    </div>
+
+    {
+      html && (
+        <div class='prose prose-pure dark:prose-invert mt-6 max-w-none text-base' set:html={html} />
+      )
+    }
+
+    <section aria-label='Steps' class='mt-8'>
+      {
+        guide.steps.length === 0 ? (
+          <p class='text-muted-foreground'>No steps yet.</p>
+        ) : (
+          <ol class='flex flex-col gap-y-2'>
+            {guide.steps.map((step, i) => (
+              <li>
+                <a
+                  class='group flex items-start gap-x-3 rounded-xl border bg-background px-4 py-3 transition-colors hover:bg-muted'
+                  href={`/guides/${guideSlug}/${step.slug}`}
+                  data-astro-prefetch
+                >
+                  <span class='mt-0.5 shrink-0 font-meta text-sm text-muted-foreground'>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span class='flex flex-col'>
+                    <span class='font-display font-medium transition-colors group-hover:text-primary'>
+                      {step.title}
+                    </span>
+                    {step.description && (
+                      <span class='line-clamp-2 text-sm text-muted-foreground'>
+                        {step.description}
+                      </span>
+                    )}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </section>
+
+    {
+      !!guide.tags.length && (
+        <ul class='mt-8 flex flex-wrap gap-2'>
+          {guide.tags.map((tag: string) => (
+            <li>
+              <Button title={tag} href={`/tags/${tag}`} variant='pill' />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </main>
+</PageLayout>
