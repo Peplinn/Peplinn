@@ -30,6 +30,27 @@ const TIERS = {
   note: 'border bg-background hover:bg-muted'
 } as const satisfies Record<PostKind, string>
 
+/**
+ * Only the note's panel flexes, and that asymmetry is the whole trick.
+ *
+ * An article's panel is pinned short, so its card height is deterministic and it
+ * is the tallest thing in the row. A note has no description, so it would come up
+ * short by those lines - its panel grows to absorb exactly that much, leaving no
+ * dead space and no ragged bottoms.
+ *
+ * Letting *every* panel flex was the previous mistake: with no fixed height an
+ * image renders at its natural aspect ratio, and a wide hero on a double-width
+ * card dragged the entire row to an absurd height.
+ */
+const PANEL_SIZE = {
+  article: 'h-32 shrink-0 sm:h-36',
+  guide: 'h-32 shrink-0 sm:h-36',
+  note: 'min-h-[8rem] flex-1 sm:min-h-[9rem]'
+} as const satisfies Record<PostKind, string>
+
+/** Beyond two lines an article's card starts driving the whole row too tall. */
+const DESCRIPTION_CLAMP = 'line-clamp-2'
+
 /** Enough to signal the subject, few enough not to wrap a one-cell card. */
 const MAX_TAGS = 3
 
@@ -47,11 +68,7 @@ const hero = data.heroImage
   style={hero?.color &&
     `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
 >
-  <a class='flex flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
-    {
-      /* Fixed height rather than an aspect ratio, so panels line up across a row
-        even though an article's card is twice as wide. */
-    }
+  <a class='flex flex-1 flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
     {
       hero ? (
         <img
@@ -59,13 +76,19 @@ const hero = data.heroImage
           alt={hero.alt || data.title}
           width={hero.width}
           height={hero.height}
-          class='h-40 w-full border-b object-cover transition-opacity duration-300 group-hover/card:opacity-90 sm:h-44'
+          class:list={[
+            'card-panel w-full object-cover transition-opacity duration-300 group-hover/card:opacity-90',
+            PANEL_SIZE[data.kind]
+          ]}
           loading={eager ? 'eager' : 'lazy'}
           decoding='async'
         />
       ) : (
         <div
-          class='flex h-40 w-full items-center justify-center border-b bg-muted/60 sm:h-44'
+          class:list={[
+            'card-panel flex w-full items-center justify-center bg-muted/60',
+            PANEL_SIZE[data.kind]
+          ]}
           aria-hidden='true'
         >
           <Icon name={kind.icon} class='size-12 text-muted-foreground/45' />
@@ -73,7 +96,11 @@ const hero = data.heroImage
       )
     }
 
-    <div class='flex flex-col gap-y-1.5 px-4 pb-2 pt-3.5'>
+    {
+      /* Pulled up under the fade, so the text begins where the image dissolves
+        rather than after it. */
+    }
+    <div class='-mt-4 flex shrink-0 flex-col gap-y-1 px-4 pb-2'>
       <span class='card-title font-display font-medium transition-colors'>
         {data.draft && <span class='text-red-500'>(Draft) </span>}
         {data.title}
@@ -81,7 +108,9 @@ const hero = data.heroImage
 
       {
         data.description && (
-          <p class='line-clamp-3 text-sm leading-snug text-muted-foreground'>{data.description}</p>
+          <p class:list={['text-sm leading-snug text-muted-foreground', DESCRIPTION_CLAMP]}>
+            {data.description}
+          </p>
         )
       }
 
@@ -100,7 +129,7 @@ const hero = data.heroImage
   }
   {
     !!data.tags.length && (
-      <ul class='tag-list mt-auto flex flex-wrap gap-1.5 px-4 pb-3.5 pt-1'>
+      <ul class='tag-list flex flex-wrap gap-1.5 px-4 pb-3.5 pt-1'>
         {data.tags.slice(0, MAX_TAGS).map((tag: string) => (
           <li>
             <Button
@@ -120,5 +149,14 @@ const hero = data.heroImage
   /* An article's card borrows its own hero colour for the title on hover. */
   .writing-card:hover .card-title {
     color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
+  }
+
+  /* The image dissolves into the card instead of stopping at a rule. Doing this
+     with a mask rather than an overlay gradient means it works against whatever
+     the card background happens to be, including the hover state and dark mode,
+     without a second colour to keep in sync. */
+  .card-panel {
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    -webkit-mask-image: -webkit-linear-gradient(top, black 55%, transparent 100%);
   }
 </style>

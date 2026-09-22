@@ -63,6 +63,10 @@ const paginationProps = {
               </a>
             </div>
             {/* posts */}
+            {/* Cards stretch to the tallest in their row (the grid default), and
+                each card's image grows to absorb whatever height its text didn't
+                use - so rows stay flush without leaving dead space inside the
+                shorter cards. */}
             <ul class='grid grid-cols-1 gap-4 text-start sm:grid-cols-2 lg:grid-cols-3'>
               {page.data.map((post, i) => (
                 <WritingCard {post} eager={i < 3} />
