@@ -48,8 +48,24 @@ export function urlFor(source: any) {
   return builder.image(source)
 }
 
+/**
+ * Sanity's image API returns only the FIRST FRAME of an animated GIF as soon as
+ * any transform is applied, and it has no video output - so an animated hero was
+ * silently rendering as a still. GIFs are passed through untouched, at the cost
+ * of their original weight; there is no server-side way to shrink one.
+ */
+function isGif(source: unknown): boolean {
+  if (typeof source === 'string') return /\.gif(\?|$)/i.test(source)
+
+  // Sanity asset ids end in the file extension, e.g. `image-<hash>-364x364-gif`.
+  const asset = (source as { asset?: { _ref?: string; _id?: string } })?.asset
+  const ref = asset?._ref ?? asset?._id
+  return typeof ref === 'string' && ref.endsWith('-gif')
+}
+
 function sanityImageUrl(source: any, width: number) {
-  return urlFor(source).width(width).format('webp').quality(80).url()
+  const url = urlFor(source)
+  return isGif(source) ? url.url() : url.width(width).format('webp').quality(80).url()
 }
 
 export function getHeadingsFromPortableText(blocks: any[]) {

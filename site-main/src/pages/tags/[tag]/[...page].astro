@@ -4,14 +4,14 @@ import type { WritingCollectionPost } from '../../../lib/sanity'
 
 import { Paginator, PostPreview } from 'astro-pure/components/pages'
 import { getSanityPosts } from '../../../lib/sanity'
-import { noStore, paginate } from '../../../lib/ssr'
+import { CACHE, cacheable, paginate } from '../../../lib/ssr'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 import config from '@/site-config'
 
 export const prerender = false
 
-noStore(Astro.response.headers)
+cacheable(Astro.response.headers, CACHE.listing)
 
 const { tag } = Astro.params
 

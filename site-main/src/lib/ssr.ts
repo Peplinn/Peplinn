@@ -1,5 +1,7 @@
 import type { Page } from 'astro'
 
+import { isDraftMode } from './sanity'
+
 /**
  * Astro's `paginate()` helper is only available inside `getStaticPaths`, which
  * on-demand routes don't have. This builds the same `Page` shape from the
@@ -60,4 +62,44 @@ export function paginate<T>(
  */
 export function noStore(headers: Headers) {
   headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+}
+
+/** `s-maxage` / `stale-while-revalidate` pairs, in seconds. */
+export const CACHE = {
+  /** A single post. Rarely edited once published. */
+  post: { sMaxAge: 600, swr: 604800 },
+  /** Anything listing posts, where a new publish should surface promptly. */
+  listing: { sMaxAge: 300, swr: 86400 },
+  /** Pages that change only when I sit down and change them. */
+  stable: { sMaxAge: 3600, swr: 604800 },
+  /** Machine-read endpoints (search index, feeds). */
+  data: { sMaxAge: 600, swr: 86400 }
+} as const
+
+/**
+ * Let Vercel's edge serve the page while it refetches in the background.
+ *
+ * Two headers, because they answer different questions. `CDN-Cache-Control` is
+ * read by the edge and stripped before the response reaches the browser, so the
+ * edge can hold a copy for minutes while the browser still revalidates on every
+ * navigation - which is cheap, since that revalidation hits a warm edge rather
+ * than a cold function.
+ *
+ * Freshness after a publish comes from `s-maxage` alone (worst case: that many
+ * seconds stale). There is deliberately no purge webhook; `/preview/<slug>` is
+ * the escape hatch when an edit needs to be seen immediately.
+ *
+ * Caveat for callers: Vercel silently refuses to cache any response carrying
+ * `Set-Cookie`, and a non-default `Vary` fragments the cache to uselessness.
+ */
+export function cacheable(headers: Headers, policy: { sMaxAge: number; swr: number }) {
+  // Drafts are token-authenticated and must never sit in a shared cache. One
+  // check covers both preview deployments and local dev.
+  if (isDraftMode()) return noStore(headers)
+
+  headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+  headers.set(
+    'CDN-Cache-Control',
+    `public, s-maxage=${policy.sMaxAge}, stale-while-revalidate=${policy.swr}`
+  )
 }

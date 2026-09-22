@@ -4,11 +4,11 @@ import PostLayout from '@/layouts/BlogPost.astro'
 import type { WritingCollectionPost } from '../../lib/sanity'
 import { getSanityPosts } from '../../lib/sanity'
 import { extractHeadings, renderMarkdown } from '../../lib/markdown'
-import { noStore } from '../../lib/ssr'
+import { CACHE, cacheable } from '../../lib/ssr'
 
 export const prerender = false
 
-noStore(Astro.response.headers)
+cacheable(Astro.response.headers, CACHE.post)
 
 const { id } = Astro.params
 
@@ -18,7 +18,9 @@ if (id && /^\d+$/.test(id)) return Astro.redirect(`/writing/page/${id}`, 301)
 const posts: WritingCollectionPost[] = await getSanityPosts()
 const post = posts.find((p) => p.slug === id)
 
-if (!post) return Astro.redirect('/404')
+// A missing post must answer 404, not 302 to a page that answers 200 - search
+// engines and link checkers read the status, not the wording.
+if (!post) return Astro.rewrite('/404')
 
 const htmlContent = await renderMarkdown(post.body)
 const headings = await extractHeadings(post.body)

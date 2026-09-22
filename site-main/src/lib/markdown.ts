@@ -12,6 +12,7 @@ import markedKatex from 'marked-katex-extension'
 import { createHighlighter } from 'shiki'
 
 import { markedCallouts } from './callouts'
+import { urlFor } from './sanity'
 
 const LANGS = [
   'js',
@@ -101,6 +102,87 @@ function codeRenderer(hl: Highlighter) {
   }
 }
 
+/** Sanity encodes intrinsic dimensions in the asset filename, e.g. `-1200x800.jpg`. */
+const SANITY_IMAGE_RE =
+  /^https:\/\/cdn\.sanity\.io\/images\/[^/]+\/[^/]+\/[^/?]+-(\d+)x(\d+)\.(\w+)/i
+
+/** Widest the prose column ever gets, so the browser never fetches more than it needs. */
+const SIZES = '(min-width: 768px) 720px, 100vw'
+
+const SRCSET_WIDTHS = [640, 960, 1280, 1920]
+
+function escapeAttr(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/**
+ * Post bodies are author-written markdown, so every `![]()` used to become a bare
+ * `<img>` - no lazy loading, no intrinsic size (hence layout shift on every image),
+ * and no resizing however large the original was.
+ *
+ * Returns a fresh renderer per document so the "first image" counter is scoped to
+ * one render rather than shared across concurrent requests.
+ */
+function imageRenderer() {
+  let seen = 0
+
+  return function image(token: Tokens.Image) {
+    const href = token.href ?? ''
+    const alt = escapeAttr(token.text ?? '')
+    const title = token.title ? ` title="${escapeAttr(token.title)}"` : ''
+
+    // Only the first image is plausibly above the fold; eagerly loading the rest
+    // is what made image-heavy posts so slow to settle.
+    const loading =
+      seen++ === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" decoding="async"'
+
+    const sanity = SANITY_IMAGE_RE.exec(href)
+
+    // Someone else's host: no dimensions are derivable and we cannot resize it,
+    // so lazy loading is all that's on offer.
+    if (!sanity) {
+      return `<img src="${escapeAttr(href)}" alt="${alt}"${title} ${loading} class="zoomable" />`
+    }
+
+    const [, rawWidth, rawHeight, ext] = sanity
+    const width = Number(rawWidth)
+    const dims = `width="${width}" height="${Number(rawHeight)}"`
+
+    // Sanity's image API returns only the FIRST FRAME once any transform is
+    // applied, and it has no video output - so an animated GIF must be passed
+    // through completely untouched. There is no server-side way to shrink one.
+    if (ext.toLowerCase() === 'gif') {
+      return `<img src="${escapeAttr(href)}" alt="${alt}"${title} ${dims} ${loading} />`
+    }
+
+    // Never upscale: a 900px-wide original has nothing to offer at 1920.
+    const widths = SRCSET_WIDTHS.filter((candidate) => candidate <= width)
+    if (widths.length === 0) widths.push(width)
+
+    const render = (w: number) => urlFor(href).width(w).format('webp').quality(80).fit('max').url()
+    const srcset = widths.map((w) => `${escapeAttr(render(w))} ${w}w`).join(', ')
+    const src = escapeAttr(render(widths[widths.length - 1]))
+
+    return `<img src="${src}" srcset="${srcset}" sizes="${SIZES}" alt="${alt}"${title} ${dims} ${loading} class="zoomable" />`
+  }
+}
+
+/**
+ * Markdown may also contain raw `<img>` HTML, which marked passes straight through
+ * without it ever reaching the renderer above. Give anything that escaped the same
+ * lazy treatment.
+ */
+function lazyLoadRawImages(html: string): string {
+  return html.replace(
+    /<img(?![^>]*\bloading=)([^>]*?)\/?>/gi,
+    '<img$1 loading="lazy" decoding="async">'
+  )
+}
+
 /**
  * A fresh `Marked` for every call - deliberately NOT shared.
  *
@@ -118,7 +200,7 @@ function codeRenderer(hl: Highlighter) {
 async function createMarked() {
   const hl = await getHighlighter()
   const instance = new Marked()
-  instance.use({ renderer: { code: codeRenderer(hl) } })
+  instance.use({ renderer: { code: codeRenderer(hl), image: imageRenderer() } })
   instance.use(markedKatex({ throwOnError: false }))
   // Registered before the built-in blockquote rule gets a look, so `> [!note]`
   // becomes a callout while every other blockquote is left alone.
@@ -130,7 +212,8 @@ async function createMarked() {
 
 export async function renderMarkdown(markdown: string) {
   const instance = await createMarked()
-  return instance.parse(markdown || '')
+  const html = await instance.parse(markdown || '')
+  return lazyLoadRawImages(html)
 }
 
 /** Headings for the sidebar TOC, slugged to match `gfmHeadingId`'s anchors. */

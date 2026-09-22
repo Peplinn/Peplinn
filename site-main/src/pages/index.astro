@@ -13,11 +13,11 @@ import config from '@/site-config'
 
 import { buildProjectCards } from '../lib/projects'
 import { getSanityPosts, getSanityProjects } from '../lib/sanity'
-import { noStore } from '../lib/ssr'
+import { CACHE, cacheable } from '../lib/ssr'
 
 export const prerender = false
 
-noStore(Astro.response.headers)
+cacheable(Astro.response.headers, CACHE.listing)
 
 const SOCIAL_LABELS: Record<string, string> = {
   github: 'GitHub',
