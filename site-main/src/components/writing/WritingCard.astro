@@ -1,0 +1,162 @@
+---
+import { Button, FormattedDate, Icon } from 'astro-pure/user'
+
+import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
+import { KINDS } from '../../lib/sanity-helpers'
+
+/**
+ * One tile in the writing grid.
+ *
+ * Hierarchy is carried by **size** - an article occupies two cells, everything
+ * else one - with a small mark and word in the meta line to make the kind
+ * explicit. Earlier attempts tied identity to whether a post had a hero image,
+ * which broke as soon as notes had images too: it made the mark an exception
+ * rather than a system. Now every card shows its image and every card names its
+ * kind.
+ *
+ * Separate from astro-pure's `PostPreview` rather than a rewrite of it, because
+ * that component is still used unmodified by the tag pages.
+ */
+interface Props {
+  post: WritingCollectionPost
+  /** The first row is above the fold; the rest shouldn't block on their image. */
+  eager?: boolean
+}
+
+/** Articles are wider, thicker-edged, and carry the site's only resting shadow. */
+const TIERS = {
+  article: 'sm:col-span-2 border-2 shadow-sm bg-background hover:bg-muted',
+  guide: 'border bg-background hover:bg-muted',
+  note: 'border bg-background hover:bg-muted'
+} as const satisfies Record<PostKind, string>
+
+/**
+ * Only the note's panel flexes, and that asymmetry is the whole trick.
+ *
+ * An article's panel is pinned short, so its card height is deterministic and it
+ * is the tallest thing in the row. A note has no description, so it would come up
+ * short by those lines - its panel grows to absorb exactly that much, leaving no
+ * dead space and no ragged bottoms.
+ *
+ * Letting *every* panel flex was the previous mistake: with no fixed height an
+ * image renders at its natural aspect ratio, and a wide hero on a double-width
+ * card dragged the entire row to an absurd height.
+ */
+const PANEL_SIZE = {
+  article: 'h-32 shrink-0 sm:h-36',
+  guide: 'h-32 shrink-0 sm:h-36',
+  note: 'min-h-[8rem] flex-1 sm:min-h-[9rem]'
+} as const satisfies Record<PostKind, string>
+
+/** Beyond two lines an article's card starts driving the whole row too tall. */
+const DESCRIPTION_CLAMP = 'line-clamp-2'
+
+/** Enough to signal the subject, few enough not to wrap a one-cell card. */
+const MAX_TAGS = 3
+
+const { post, eager = false } = Astro.props
+const { data } = post
+const kind = KINDS[data.kind]
+const hero = data.heroImage
+---
+
+<li
+  class:list={[
+    'writing-card group/card flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
+    TIERS[data.kind]
+  ]}
+  style={hero?.color &&
+    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
+>
+  <a class='flex flex-1 flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
+    {
+      hero ? (
+        <img
+          src={hero.src}
+          alt={hero.alt || data.title}
+          width={hero.width}
+          height={hero.height}
+          class:list={[
+            'card-panel w-full object-cover transition-opacity duration-300 group-hover/card:opacity-90',
+            PANEL_SIZE[data.kind]
+          ]}
+          loading={eager ? 'eager' : 'lazy'}
+          decoding='async'
+        />
+      ) : (
+        <div
+          class:list={[
+            'card-panel flex w-full items-center justify-center bg-muted/60',
+            PANEL_SIZE[data.kind]
+          ]}
+          aria-hidden='true'
+        >
+          <Icon name={kind.icon} class='size-12 text-muted-foreground/45' />
+        </div>
+      )
+    }
+
+    {
+      /* Pulled up under the fade, so the text begins where the image dissolves
+        rather than after it. */
+    }
+    <div class='-mt-4 flex shrink-0 flex-col gap-y-1 px-4 pb-2'>
+      <span class='card-title font-display font-medium transition-colors'>
+        {data.draft && <span class='text-red-500'>(Draft) </span>}
+        {data.title}
+      </span>
+
+      {
+        data.description && (
+          <p class:list={['text-sm leading-snug text-muted-foreground', DESCRIPTION_CLAMP]}>
+            {data.description}
+          </p>
+        )
+      }
+
+      <div class='flex items-center gap-x-2 pt-1 text-xs text-muted-foreground'>
+        <Icon name={kind.icon} class='size-3.5 shrink-0' aria-hidden='true' />
+        <span>{kind.label}</span>
+        <span aria-hidden='true'>·</span>
+        <FormattedDate date={data.publishDate} />
+      </div>
+    </div>
+  </a>
+
+  {
+    /* Outside the card link: a link inside a link is invalid, and these go
+      somewhere else entirely. */
+  }
+  {
+    !!data.tags.length && (
+      <ul class='tag-list flex flex-wrap gap-1.5 px-4 pb-3.5 pt-1'>
+        {data.tags.slice(0, MAX_TAGS).map((tag: string) => (
+          <li>
+            <Button
+              title={tag}
+              href={`/tags/${tag}`}
+              variant='pill'
+              class='!px-2 !py-0.5 !text-xs'
+            />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</li>
+
+<style>
+  /* An article's card borrows its own hero colour for the title on hover. */
+  .writing-card:hover .card-title {
+    color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
+  }
+
+  /* The image dissolves into the card instead of stopping at a rule. Doing this
+     with a mask rather than an overlay gradient means it works against whatever
+     the card background happens to be, including the hover state and dark mode,
+     without a second colour to keep in sync. */
+  .card-panel {
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+    -webkit-mask-image: -webkit-linear-gradient(top, black 55%, transparent 100%);
+  }
+</style>

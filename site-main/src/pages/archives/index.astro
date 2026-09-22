@@ -1,9 +1,10 @@
 ---
-import { PostPreview } from 'astro-pure/components/pages'
-import { groupSanityPostsByYear } from '../../lib/sanity-helpers'
-import { getSanityPosts, type WritingCollectionPost } from '../../lib/sanity'
 import { Button } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import WritingRow from '@/components/writing/WritingRow.astro'
+
+import { getSanityPosts, type WritingCollectionPost } from '../../lib/sanity'
+import { groupSanityPostsByYear } from '../../lib/sanity-helpers'
 import { CACHE, cacheable } from '../../lib/ssr'
 
 export const prerender = false
@@ -17,7 +18,6 @@ const allPostsByDate = [...allPosts].sort(
     new Date(a.data.updatedDate ?? a.data.publishDate ?? 0).valueOf()
 )
 const allPostsByYear = Object.entries(groupSanityPostsByYear(allPostsByDate))
-
 
 const meta = {
   description: 'A list of all the years of writing my posts.',
@@ -33,7 +33,7 @@ const meta = {
       <h1 class='mb-6 text-3xl font-medium'>Archives</h1>
     </div>
 
-    {allPosts.length === 0 && <p>No poss yet.</p>}
+    {allPosts.length === 0 && <p>No posts yet.</p>}
 
     <section id='content' class='animate' aria-label='Writing post list'>
       {
@@ -48,9 +48,10 @@ const meta = {
             <p class='px-5 text-muted-foreground'>
               {posts.length} post{posts.length > 1 && 's'}
             </p>
-            <ul class='flex flex-col text-start'>
+            {/* Titles only, so each row carries its type mark. */}
+            <ul class='flex flex-col px-5 text-start'>
               {posts.map((p: WritingCollectionPost) => (
-                <PostPreview post={p} class='border-0 bg-transparent py-2' />
+                <WritingRow post={p} />
               ))}
             </ul>
           </div>

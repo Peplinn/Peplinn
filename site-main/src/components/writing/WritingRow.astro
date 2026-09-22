@@ -1,0 +1,43 @@
+---
+import { FormattedDate, Icon } from 'astro-pure/user'
+
+import type { WritingCollectionPost } from '../../lib/sanity'
+import { KINDS } from '../../lib/sanity-helpers'
+
+/**
+ * A single line, no bounding box - for places that list writing without being the
+ * writing page. The leading mark is what says which kind of piece it is.
+ */
+interface Props {
+  post: WritingCollectionPost
+}
+
+const { post } = Astro.props
+const { data } = post
+const kind = KINDS[data.kind]
+---
+
+<li>
+  <a
+    class='group flex items-center gap-x-3 py-1.5 transition-colors hover:text-primary'
+    href={`/writing/${post.slug}`}
+    data-astro-prefetch
+  >
+    <Icon
+      name={kind.icon}
+      class='size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary'
+      aria-hidden='true'
+    />
+    <span class='sr-only'>{kind.label}:</span>
+
+    <span class='truncate font-display'>{data.title}</span>
+
+    {
+      /* Lets the date sit at the far edge so titles of different lengths still
+        scan as one column. */
+    }
+    <span class='h-px min-w-4 flex-1 bg-border' aria-hidden='true'></span>
+
+    <FormattedDate class='shrink-0 text-xs text-muted-foreground' date={data.publishDate} />
+  </a>
+</li>

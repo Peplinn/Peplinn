@@ -1,10 +1,12 @@
 ---
 import type { Page } from 'astro'
-import type { WritingCollectionPost } from '../../lib/sanity'
 
-import { Paginator, PostPreview } from 'astro-pure/components/pages'
+import { Paginator } from 'astro-pure/components/pages'
 import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+
+import type { WritingCollectionPost } from '../../lib/sanity'
+import WritingCard from './WritingCard.astro'
 
 interface Props {
   page: Page<WritingCollectionPost>
@@ -39,6 +41,10 @@ const paginationProps = {
   <Button title='Home' href='/' variant='back' />
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
+      {
+        /* No legend: each card names its own kind in words beside the mark, so a
+          separate key would only repeat what the cards already say. */
+      }
       <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>
     </div>
     {
@@ -57,10 +63,13 @@ const paginationProps = {
               </a>
             </div>
             {/* posts */}
-            <ul class='flex flex-col gap-y-4 text-start'>
-              {page.data.map((post) => (
-                // @ts-ignore - The mapped object shape matches what PostPreview needs
-                <PostPreview {post} detailed />
+            {/* Cards stretch to the tallest in their row (the grid default), and
+                each card's image grows to absorb whatever height its text didn't
+                use - so rows stay flush without leaving dead space inside the
+                shorter cards. */}
+            <ul class='grid grid-cols-1 gap-4 text-start sm:grid-cols-2 lg:grid-cols-3'>
+              {page.data.map((post, i) => (
+                <WritingCard {post} eager={i < 3} />
               ))}
             </ul>
             <Paginator {...paginationProps} />

@@ -1,3 +1,5 @@
+import { CustomIcons } from './custom-icons'
+
 export const BuiltInIcons = {
   // === Social ===
   //mingcute:linkedin-line
@@ -136,5 +138,6 @@ export const BuiltInIcons = {
 }
 
 export const Icons = {
-  ...BuiltInIcons
+  ...BuiltInIcons,
+  ...CustomIcons
 }

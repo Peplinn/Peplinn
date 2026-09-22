@@ -86,6 +86,16 @@ export function getHeadingsFromPortableText(blocks: any[]) {
     })
 }
 
+/**
+ * What kind of writing a piece is, as the front end sees it.
+ *
+ * Deliberately one flat discriminator even though the back end models guides as a
+ * separate document type - rendering shouldn't have to care how the CMS stores
+ * the distinction.
+ */
+export const POST_KINDS = ['article', 'guide', 'note'] as const
+export type PostKind = (typeof POST_KINDS)[number]
+
 export type WritingCollectionPost = {
   id: string
   slug: string
@@ -94,6 +104,7 @@ export type WritingCollectionPost = {
   data: {
     title: string
     description: string
+    kind: PostKind
     comment: boolean
     draft: boolean
     publishDate: Date
@@ -185,11 +196,13 @@ function mapHeroImage(source: any, alt: string, width: number) {
 
 const POST_PROJECTION = `
   _id,
+  _type,
   publishedAt,
   _updatedAt,
   _createdAt,
   title,
   description,
+  type,
   "slug": slug.current,
   tags,
   "tagTitles": tags[]->title,
@@ -214,6 +227,18 @@ function normalizeTags(post: any): string[] {
   return Array.isArray(post.tags) ? post.tags.filter(isString) : []
 }
 
+/**
+ * Collapses the CMS's two-axis model - document type, plus a `type` field on
+ * blogPost - into the single discriminator the front end renders from.
+ *
+ * Posts written before the `type` field existed have none, so they read as
+ * articles rather than disappearing.
+ */
+function postKind(post: any): PostKind {
+  if (post._type === 'guide') return 'guide'
+  return post.type === 'note' ? 'note' : 'article'
+}
+
 function mapPost(post: any): WritingCollectionPost {
   const rawMarkdown = post.content || post.body || ''
   const readStats = getReadingTime(rawMarkdown)
@@ -227,6 +252,7 @@ function mapPost(post: any): WritingCollectionPost {
     data: {
       title: post.title,
       description: post.description || '',
+      kind: postKind(post),
       comment: false,
       draft: isDraftDocument,
       publishDate: toValidDate(post.publishedAt, post._updatedAt, post._createdAt),
