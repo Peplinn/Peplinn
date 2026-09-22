@@ -8,8 +8,9 @@ export const blogPost = defineType({
   title: 'Blog Post',
   type: 'document',
   fields: [
-    ...baseContentFields,
-
+    // First, deliberately: this has to sit above `content`, because the markdown
+    // editor is full-height and anything after it is effectively invisible.
+    //
     // Presentation tier, not structure. Guides are a separate document type
     // because they carry ordered children and live under their own URL - folding
     // them in here would mean a conditional field, and Sanity keeps the data in
@@ -30,6 +31,8 @@ export const blogPost = defineType({
       },
       validation: r => r.required()
     }),
+
+    ...baseContentFields,
 
     defineField({
       name: 'heroImage',

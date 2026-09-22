@@ -77,9 +77,9 @@ const paginationProps = {
               </a>
             </div>
             {/* posts */}
-            <ul class='flex flex-col gap-y-3 text-start'>
+            <ul class='grid grid-cols-1 gap-4 text-start sm:grid-cols-2 lg:grid-cols-3'>
               {page.data.map((post, i) => (
-                <WritingCard {post} eager={i === 0} />
+                <WritingCard {post} eager={i < 3} />
               ))}
             </ul>
             <Paginator {...paginationProps} />

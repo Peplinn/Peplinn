@@ -1,150 +1,107 @@
 ---
-import { Button, FormattedDate, Icon } from 'astro-pure/user'
+import { FormattedDate, Icon } from 'astro-pure/user'
 
-import type { WritingCollectionPost } from '../../lib/sanity'
+import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
 import { KINDS } from '../../lib/sanity-helpers'
 
 /**
- * One card per piece of writing, with the richness of the treatment tracking the
- * weight of the piece: an article earns imagery and a description, a note is a
- * single line. Everything is still a card, so the page reads as one system.
+ * One tile in the writing grid.
+ *
+ * Every card keeps the same shape so the grid stays regular; what varies is the
+ * panel at the top. A post with a hero image shows it, and everything else shows
+ * its type mark large on a tinted panel - which is what keeps an image-less card
+ * from reading as broken next to an image one, and gives the marks a job beyond
+ * decoration.
  *
  * Separate from astro-pure's `PostPreview` rather than a rewrite of it, because
  * that component is still used unmodified by /archives and the tag pages.
  */
 interface Props {
   post: WritingCollectionPost
-  /** Only the first card is plausibly above the fold. */
+  /** The first row is above the fold; the rest shouldn't block on their image. */
   eager?: boolean
 }
+
+/**
+ * The tier ladder, as chrome rather than content: an article sits lifted off the
+ * page, a guide is a plain outline, a note recedes into a filled panel. Articles
+ * carry the only resting shadow anywhere on the site, which is what makes them
+ * read as raised rather than merely thicker.
+ */
+const TIERS = {
+  article: 'border-2 shadow-sm bg-background hover:bg-muted',
+  guide: 'border bg-background hover:bg-muted',
+  note: 'border bg-muted/40 hover:bg-muted'
+} as const satisfies Record<PostKind, string>
 
 const { post, eager = false } = Astro.props
 const { data } = post
 const kind = KINDS[data.kind]
 
-const href = `/writing/${post.slug}`
+// Imagery is part of the tier, not a property of the document. A note that
+// happens to carry a hero image would otherwise render as an article.
 const hero = data.kind === 'article' ? data.heroImage : undefined
-const showDescription = data.kind !== 'note' && !!data.description
 ---
 
 <li
   class:list={[
-    'writing-card group/card relative flex flex-col rounded-2xl border bg-background transition-colors ease-in-out hover:bg-muted',
-    data.kind === 'note' ? 'px-5 py-2.5' : 'px-5 py-4 max-sm:px-4'
+    'writing-card group/card overflow-hidden rounded-2xl transition-all ease-in-out',
+    TIERS[data.kind]
   ]}
   style={hero?.color &&
-    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)));
-    --card-highlight-bg:hsl(from ${hero.color} h s l/20%)`}
+    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
 >
-  <a
-    class:list={[
-      'group/link z-10 flex w-full flex-col transition-colors hover:text-primary',
-      hero && 'max-md:pt-24'
-    ]}
-    {href}
-    data-astro-prefetch
-  >
+  <a class='flex h-full flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
     {
-      hero && (
+      hero ? (
         <img
           src={hero.src}
           alt={hero.alt || data.title}
           width={hero.width}
           height={hero.height}
-          class='cover-image absolute end-0 top-0 z-0 h-2/3 w-full rounded-2xl object-cover opacity-50 transition-opacity duration-300 group-hover/card:opacity-70 md:h-full md:w-3/5'
+          class='aspect-[3/2] w-full border-b object-cover transition-opacity duration-300 group-hover/card:opacity-90'
           loading={eager ? 'eager' : 'lazy'}
           decoding='async'
         />
+      ) : (
+        <div
+          class='flex aspect-[3/2] w-full items-center justify-center border-b bg-muted/60'
+          aria-hidden='true'
+        >
+          <Icon
+            name={kind.icon}
+            class='size-12 text-muted-foreground/45 transition-colors duration-300 group-hover/card:text-muted-foreground/70'
+          />
+        </div>
       )
     }
 
-    <div class='z-10 flex items-center gap-x-3'>
-      {/* The mark is the type label - the legend at the top of the page is the key. */}
-      <Icon
-        name={kind.icon}
-        class='size-4 shrink-0 text-muted-foreground transition-colors group-hover/link:text-primary'
-        aria-hidden='true'
-      />
-      <span class='sr-only'>{kind.label}:</span>
-
-      <span class='flex-grow font-display font-medium'>
+    <div class='flex flex-grow flex-col gap-y-1.5 px-4 py-3.5'>
+      <span class='card-title font-display font-medium transition-colors'>
         {data.draft && <span class='text-red-500'>(Draft) </span>}
         {data.title}
       </span>
 
-      <FormattedDate class='shrink-0 text-xs text-muted-foreground' date={data.publishDate} />
+      {
+        data.description && (
+          <p class='line-clamp-3 text-sm leading-snug text-muted-foreground'>{data.description}</p>
+        )
+      }
+
+      {/* Pushed to the bottom so the meta line sits flush across a ragged row. */}
+      <div class='mt-auto flex items-center gap-x-2 pt-2 text-xs text-muted-foreground'>
+        <span class='sr-only'>{kind.label}:</span>
+        <FormattedDate date={data.publishDate} />
+        {data.kind !== 'note' && <span aria-hidden='true'>·</span>}
+        {data.kind !== 'note' && <span>{data.minutesRead}</span>}
+      </div>
     </div>
-
-    {
-      showDescription && (
-        <p
-          class:list={[
-            'z-10 line-clamp-2 ps-7 pt-1 text-sm text-muted-foreground sm:line-clamp-3',
-            hero && 'sm:me-24'
-          ]}
-        >
-          {data.description}
-        </p>
-      )
-    }
-
-    {
-      data.kind !== 'note' && (
-        <span class='z-10 ps-7 pt-1.5 text-xs italic text-muted-foreground'>
-          {data.minutesRead}
-        </span>
-      )
-    }
   </a>
-
-  {
-    data.kind !== 'note' && !!data.tags.length && (
-      <ul class='tag-list z-10 mt-2 flex flex-wrap gap-2 ps-7'>
-        {data.tags.map((tag: string) => (
-          <li>
-            <Button title={tag} href={`/tags/${tag}`} variant='pill' />
-          </li>
-        ))}
-      </ul>
-    )
-  }
 </li>
 
 <style>
-  /* An article's card borrows its own hero colour for the hover state. */
-  .writing-card {
-    --card-highlight-final: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
-  }
-  .writing-card:hover {
-    &,
-    & .tag-list a {
-      background-color: var(
-        --card-highlight-bg,
-        hsl(var(--muted) / var(--un-bg-opacity, 1))
-      ) !important;
-    }
-    & > a,
-    & .tag-list a:hover {
-      color: var(--card-highlight-final) !important;
-    }
-  }
-  .cover-image {
-    mask-image: linear-gradient(to right, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
-    -webkit-mask-image: -webkit-linear-gradient(
-      to right,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 1) 100%
-    );
-  }
-
-  @media (max-width: 768px) {
-    .cover-image {
-      mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
-      -webkit-mask-image: -webkit-linear-gradient(
-        to top,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 1) 100%
-      );
-    }
+  /* An article's card borrows its own hero colour for the title on hover. */
+  .writing-card:hover .card-title {
+    color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
   }
 </style>
