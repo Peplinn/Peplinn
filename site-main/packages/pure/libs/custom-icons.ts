@@ -17,11 +17,15 @@
  *   min feature  1 cell (2 units), equal to mingcute's effective stroke weight
  *   corner       rx="0.5" - square at 14px where you want square, visibly
  *                softened at 80px where it echoes the card radius ladder
- *   colour       fill="currentColor" only, so marks inherit
+ *   colour       currentColor only, so marks inherit
  *                text-muted-foreground -> hover:text-primary for free
  *
  * Draw each contiguous block as ONE rect, never as a string of single cells -
  * otherwise every cell rounds its own corners and a bar reads as a stack of beads.
+ *
+ * Rects are the default, but not a rule for its own sake: `guide` strokes a
+ * diagonal, because a grid of axis-aligned rects cannot draw one. Reach for a
+ * stroke only when the shape genuinely needs it, and keep it on currentColor.
  *
  * Entries are raw SVG *inner* markup, with no wrapper and no viewBox. They must
  * also survive being pasted into a hand-built template string, as
@@ -32,9 +36,18 @@ export const CustomIcons = {
   article:
     '<g fill="currentColor"><rect x="3" y="16" width="2" height="4" rx="0.5"/><rect x="7" y="12" width="2" height="8" rx="0.5"/><rect x="11" y="6" width="2" height="14" rx="0.5"/><rect x="15" y="10" width="2" height="10" rx="0.5"/><rect x="19" y="14" width="2" height="6" rx="0.5"/></g>',
 
-  /** Four contiguous ascending steps: a progression, to be followed in order. */
+  /**
+   * Three plotted points rising left to right, joined by their trend line: a
+   * progression, to be followed in order.
+   *
+   * The dots are the note mark at half size, which is the one place the set
+   * quotes itself - a guide reads as several of the thing a note is one of. The
+   * connector is the only stroked element in the set, because a diagonal is the
+   * one shape the grid of rects genuinely cannot draw. It is painted first so
+   * the points sit on top of it.
+   */
   guide:
-    '<g fill="currentColor"><rect x="4" y="16" width="4" height="4" rx="0.5"/><rect x="8" y="12" width="4" height="8" rx="0.5"/><rect x="12" y="8" width="4" height="12" rx="0.5"/><rect x="16" y="4" width="4" height="16" rx="0.5"/></g>',
+    '<g fill="currentColor"><line x1="6" y1="16" x2="18" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="4" y="14" width="4" height="4" rx="0.5"/><rect x="10" y="10" width="4" height="4" rx="0.5"/><rect x="16" y="6" width="4" height="4" rx="0.5"/></g>',
 
   /** One rise: a single step out of a sequence. */
   'guide-step':
