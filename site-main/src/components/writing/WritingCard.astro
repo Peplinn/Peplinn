@@ -2,7 +2,7 @@
 import { Button, FormattedDate, Icon } from 'astro-pure/user'
 
 import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
-import { KINDS } from '../../lib/sanity-helpers'
+import { KINDS, postHref } from '../../lib/sanity-helpers'
 
 /**
  * One tile in the writing grid.
@@ -76,15 +76,13 @@ const cardStyle = hero?.color
 
 <li
   class:list={[
-    'writing-card group/card flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
-    TIERS[data.kind]
+    'writing-card group/card relative flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
+    TIERS[data.kind],
+    data.kind === 'article' && 'card-railed'
   ]}
   style={cardStyle}
 >
-  {/* Articles only - the heaviest step of the three. */}
-  {data.kind === 'article' && <span class='card-rail h-[3px] w-full shrink-0' aria-hidden='true' />}
-
-  <a class='flex flex-1 flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
+  <a class='flex flex-1 flex-col' href={postHref(post)} data-astro-prefetch>
     <div class:list={['card-panel', PANEL_SIZE, !hero && 'bg-muted/60']}>
       {
         hero ? (
@@ -158,10 +156,26 @@ const cardStyle = hero?.color
     color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
   }
 
-  /* Falls back to the site accent, so an article with no hero image still gets a
-     rail rather than an invisible strip. */
-  .card-rail {
-    background-color: var(--card-rail, hsl(var(--primary) / var(--un-bg-opacity, 1)));
+  /* The rail is a masked ring, not a border edge.
+
+     A coloured `border-top` stops halfway round each corner: CSS mitres adjacent
+     border colours along the corner's diagonal, so the top colour hands off to
+     the side colour mid-arc and no border property can push it further. Drawing
+     a full rounded ring and masking it vertically instead lets the colour run
+     the whole top edge, carry through both corner radii, and fade out down the
+     sides.
+
+     Solid past 18px so it clears the 1rem corner arc before it starts fading.
+     Falls back to the site accent for an article with no hero colour. */
+  .writing-card.card-railed::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid var(--card-rail, hsl(var(--primary)));
+    border-radius: inherit;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
+    mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
+    pointer-events: none;
   }
 
   /* The image dissolves into the card instead of stopping at a rule. Doing this

@@ -36,6 +36,16 @@ export function getSanityTags(posts: WritingCollectionPost[]) {
 }
 
 /**
+ * Where a post lives. Articles and notes sit at /writing/<slug>; a guide is its
+ * own document type with children, so it lives at /guides/<slug> and its steps
+ * hang underneath. One helper because four places build this link - listings,
+ * rows, the feed and the search index - and they must not drift apart.
+ */
+export function postHref(post: WritingCollectionPost): string {
+  return post.data.kind === 'guide' ? `/guides/${post.slug}` : `/writing/${post.slug}`
+}
+
+/**
  * The kinds selected in `?type=article&type=note`, validated against the real
  * list so a hand-edited URL can't put junk into the filter UI. Filtering
  * `POST_KINDS` rather than the raw values also dedupes and forces a stable

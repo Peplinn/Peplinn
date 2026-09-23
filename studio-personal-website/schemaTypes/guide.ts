@@ -17,6 +17,19 @@ export const guide = defineType({
   fields: [
     ...baseContentFields,
 
+    // Same shape as blogPost's, so a guide gets a cover on the writing grid like
+    // anything else rather than always falling back to its mark panel.
+    defineField({
+      name: 'heroImage',
+      title: 'Hero image',
+      type: 'image',
+      options: {hotspot: true},
+      fields: [
+        {name: 'alt', type: 'string', title: 'Alt text'},
+        {name: 'color', type: 'string', title: 'Primary color'}
+      ]
+    }),
+
     defineField({
       name: 'publishedAt',
       type: 'datetime',

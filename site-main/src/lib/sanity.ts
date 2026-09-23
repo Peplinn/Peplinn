@@ -271,8 +271,8 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   // published document. Ordering by `_updatedAt` puts the draft first, and the
   // dedupe below keeps it. Production filters drafts out at the query.
   const query = draftMode
-    ? `*[_type == "blogPost"] | order(_updatedAt desc) { ${POST_PROJECTION} }`
-    : `*[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) { ${POST_PROJECTION} }`
+    ? `*[_type in ["blogPost", "guide"]] | order(_updatedAt desc) { ${POST_PROJECTION} }`
+    : `*[_type in ["blogPost", "guide"] && !(_id in path("drafts.**"))] | order(publishedAt desc) { ${POST_PROJECTION} }`
 
   const rawPosts = await getClient().fetch(query)
 

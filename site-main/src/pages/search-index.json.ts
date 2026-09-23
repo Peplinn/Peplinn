@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro'
 
 import { isVisualization, VISUALIZATIONS_HREF } from '../lib/projects'
 import { getSanityPosts, getSanityProjects } from '../lib/sanity'
+import { postHref } from '../lib/sanity-helpers'
 import { CACHE, cacheable } from '../lib/ssr'
 
 export const prerender = false
@@ -51,7 +52,7 @@ export const GET: APIRoute = async () => {
     ...posts.map((post) => ({
       id: `writing:${post.slug}`,
       title: post.data.title,
-      url: `/writing/${post.slug}`,
+      url: postHref(post),
       kind: 'Writing',
       description: post.data.description,
       tags: post.data.tags,

@@ -2,7 +2,7 @@
 import { FormattedDate, Icon } from 'astro-pure/user'
 
 import type { WritingCollectionPost } from '../../lib/sanity'
-import { KINDS } from '../../lib/sanity-helpers'
+import { KINDS, postHref } from '../../lib/sanity-helpers'
 
 /**
  * A single line, no bounding box - for places that list writing without being
@@ -25,7 +25,7 @@ const kind = KINDS[data.kind]
 <li>
   <a
     class='group flex items-baseline gap-x-3 py-1.5 transition-colors hover:text-primary'
-    href={`/writing/${post.slug}`}
+    href={postHref(post)}
     data-astro-prefetch
   >
     {/* Fixed width so the marks and titles line up regardless of date length. */}
