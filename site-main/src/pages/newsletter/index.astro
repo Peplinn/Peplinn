@@ -1,6 +1,7 @@
 ---
 import { Button, FormattedDate } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import SubscribeForm from '@/components/newsletter/SubscribeForm.astro'
 
 import { getNewsletterIssues } from '../../lib/sanity'
 import { CACHE, cacheable } from '../../lib/ssr'
@@ -11,12 +12,13 @@ cacheable(Astro.response.headers, CACHE.listing)
 
 const issues = await getNewsletterIssues()
 
+// Set by the no-JS path of /api/subscribe, which redirects back here.
+const subscribedParam = Astro.url.searchParams.get('subscribed')
+const status = subscribedParam === 'yes' ? 'yes' : subscribedParam === 'no' ? 'no' : null
+
 const meta = {
-  description: 'Issues of the newsletter.',
-  title: 'Newsletter',
-  // Reachable by direct URL only - not yet linked from the header or /writing,
-  // and not ready to be found on its own. Drop this once it's launched.
-  noindex: true
+  description: 'Updates and recent up-to\'s, sent sometimes.',
+  title: 'Newsletter'
 }
 ---
 
@@ -25,29 +27,38 @@ const meta = {
 
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
-      <h1 class='mb-2 text-3xl font-medium'>Newsletter</h1>
-      <p class='text-muted-foreground'>{meta.description}</p>
+      <h1 class='mb-2 mt-6 text-3xl font-medium sm:mt-10'>Newsletter</h1>
+      <p class='mb-6 text-muted-foreground'>{meta.description}</p>
     </div>
 
-    <section id='content' class='animate mt-6' aria-label='Newsletter issues'>
+    {/* Above the archive deliberately: signing up is the point of the page. */}
+    <div class='animate'>
+      <SubscribeForm {status} />
+    </div>
+
+    {
+      /* No heading: a list of dated titles under a page called Newsletter is
+        self-evidently the archive. The label is carried by `aria-label` for
+        anyone who can't see that. */
+    }
+    <section id='content' class='animate mt-8' aria-label='Past issues'>
       {
         issues.length === 0 ? (
-          <p class='text-muted-foreground'>Nothing here yet.</p>
+          <p class='text-sm text-muted-foreground'>No issues yet.</p>
         ) : (
-          <ul class='flex flex-col gap-y-1'>
+          <ul class='flex flex-col'>
             {issues.map((issue) => (
               <li>
                 <a
-                  class='group flex items-center gap-x-3 py-1.5 transition-colors hover:text-primary'
+                  class='group flex items-baseline gap-x-3 py-1.5 transition-colors hover:text-primary'
                   href={`/newsletter/${issue.slug}`}
                   data-astro-prefetch
                 >
-                  <span class='font-display'>{issue.title}</span>
-                  <span class='h-px min-w-4 flex-1 bg-border' aria-hidden='true' />
                   <FormattedDate
-                    class='shrink-0 text-xs text-muted-foreground'
+                    class='w-[5.5rem] shrink-0 font-meta text-xs text-muted-foreground'
                     date={issue.publishDate}
                   />
+                  <span class='font-display'>{issue.title}</span>
                 </a>
               </li>
             ))}
