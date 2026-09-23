@@ -32,7 +32,9 @@ interface Props {
  * border nor fill and sits flat on the page.
  */
 const TIERS = {
-  article: 'border-2 shadow-sm bg-muted/60 hover:bg-muted',
+  // No border utility: an article's edge is drawn by the two rings in the style
+  // block below, so the coloured one can be the outermost thing on the card.
+  article: 'shadow-sm bg-muted/60 hover:bg-muted',
   guide: 'border bg-background hover:bg-muted',
   note: 'hover:bg-muted'
 } as const satisfies Record<PostKind, string>
@@ -156,26 +158,39 @@ const cardStyle = hero?.color
     color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
   }
 
-  /* The rail is a masked ring, not a border edge.
+  /* An article's edge is two stacked rings rather than a border.
 
-     A coloured `border-top` stops halfway round each corner: CSS mitres adjacent
-     border colours along the corner's diagonal, so the top colour hands off to
-     the side colour mid-arc and no border property can push it further. Drawing
-     a full rounded ring and masking it vertically instead lets the colour run
-     the whole top edge, carry through both corner radii, and fade out down the
-     sides.
+     A real border plus an overlay ring reads as two rings, because a pseudo-
+     element at `inset: 0` sits against the padding box - inside the border. And
+     a coloured `border-top` can't be the answer either: CSS mitres adjacent
+     border colours along the corner's diagonal, so the colour hands off to the
+     side colour mid-arc and no property pushes it further.
 
-     Solid past 18px so it clears the 1rem corner arc before it starts fading.
-     Falls back to the site accent for an article with no hero colour. */
+     So: no border on the card at all. `::before` draws the neutral ring and
+     `::after` draws the same ring in the rail colour, masked to fade out down
+     the sides. Identical geometry, so the coloured one simply replaces the
+     neutral one where it is opaque - one ring, outermost, changing colour.
+
+     Solid past 18px so it clears the 1rem corner arc before starting to fade. */
+  .writing-card.card-railed::before,
   .writing-card.card-railed::after {
     content: '';
     position: absolute;
     inset: 0;
-    border: 3px solid var(--card-rail, hsl(var(--primary)));
+    border: 2px solid;
     border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .writing-card.card-railed::before {
+    border-color: hsl(var(--border));
+  }
+
+  /* Falls back to the site accent for an article with no hero colour. */
+  .writing-card.card-railed::after {
+    border-color: var(--card-rail, hsl(var(--primary)));
     -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
     mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
-    pointer-events: none;
   }
 
   /* The image dissolves into the card instead of stopping at a rule. Doing this
