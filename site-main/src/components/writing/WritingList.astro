@@ -5,33 +5,41 @@ import { Paginator } from 'astro-pure/components/pages'
 import { Button, Icon } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
 
-import type { WritingCollectionPost } from '../../lib/sanity'
+import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
+import TypeFilter from './TypeFilter.astro'
 import WritingCard from './WritingCard.astro'
 
 interface Props {
   page: Page<WritingCollectionPost>
   uniqueTags: string[]
+  selectedKinds: PostKind[]
+  kindCounts: Record<PostKind, number>
   collectionsCount: number
 }
 
-const { page, uniqueTags, collectionsCount } = Astro.props
+const { page, uniqueTags, selectedKinds, kindCounts, collectionsCount } = Astro.props
 
 const meta = {
   description: 'Interesting things I want to share.',
   title: 'Writing'
 }
 
+// `paginate()` builds bare paths, so the filter has to be re-attached or paging
+// through a filtered list would silently drop back to everything.
+const typeQuery = selectedKinds.map((kind) => `type=${kind}`).join('&')
+const withFilter = (url: string) => (typeQuery ? `${url}?${typeQuery}` : url)
+
 const paginationProps = {
   ...(page.url.prev && {
     prevUrl: {
       text: `← Previous Posts`,
-      url: page.url.prev
+      url: withFilter(page.url.prev)
     }
   }),
   ...(page.url.next && {
     nextUrl: {
       text: `Next Posts →`,
-      url: page.url.next
+      url: withFilter(page.url.next)
     }
   })
 }
@@ -40,64 +48,99 @@ const paginationProps = {
 <PageLayout {meta}>
   <Button title='Home' href='/' variant='back' />
   <main class='mt-6 lg:mt-10'>
-    <div id='content-header' class='animate'>
+    {
+      /* `relative z-30` is what lets the type dropdown overlap the posts below.
+        `.animate` ends on a transform with `fill-mode: forwards`, so this header
+        and the posts section are each a stacking context - leaving the dropdown
+        trapped in the earlier one and painted under the later one, whatever
+        z-index it set for itself. */
+    }
+    <div id='content-header' class='animate relative z-30'>
       {
         /* No legend: each card names its own kind in words beside the mark, so a
           separate key would only repeat what the cards already say. */
       }
-      <h1 class='mb-6 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>
-    </div>
-    {
-      page.data.length === 0 ? (
-        <p>No posts yet.</p>
-      ) : (
-        <div class='grid gap-y-16 sm:grid-cols-[3fr_1fr] sm:gap-x-8'>
-          <section aria-label='Posts list' class='animate' id='content'>
-            {/* header */}
-            <div class='mb-3 flex flex-col justify-between text-sm sm:mb-5 sm:flex-row'>
-              <span class='text-muted-foreground'>
-                Page {page.currentPage} - Showing {page.data.length} of {collectionsCount} posts
-              </span>
-              <a aria-label='View all posts by years' href='/archives' data-astro-prefetch>
-                View all posts by years →
-              </a>
-            </div>
-            {/* posts */}
-            {/* Cards stretch to the tallest in their row (the grid default), and
-                each card's image grows to absorb whatever height its text didn't
-                use - so rows stay flush without leaving dead space inside the
-                shorter cards. */}
-            <ul class='grid grid-cols-1 gap-4 text-start sm:grid-cols-2 lg:grid-cols-3'>
-              {page.data.map((post, i) => (
-                <WritingCard {post} eager={i < 3} />
-              ))}
-            </ul>
-            <Paginator {...paginationProps} />
-          </section>
+      <h1 class='mb-4 mt-6 text-3xl font-medium sm:mt-10'>Writing</h1>
 
-          {/* sidebar */}
-          {!!uniqueTags.length && (
-            <aside class='animate' id='sidebar'>
-              <h2 class='mb-4 flex items-center text-lg font-semibold'>
-                <Icon name='tag-2' class='me-2' />
-                Tags
-              </h2>
-              <ul class='text-bgColor flex flex-wrap gap-2'>
-                {uniqueTags.map((tag) => (
-                  <li>
-                    <Button title={tag} href={`/tags/${tag}`} variant='pill' />
-                  </li>
+      {
+        /* Outside the empty-state branch below, deliberately: filtering down to
+          nothing has to leave you something to un-filter with. */
+      }
+      <div class='mb-6'>
+        <TypeFilter selected={selectedKinds} counts={kindCounts} />
+      </div>
+    </div>
+
+    <div class='grid gap-y-16 sm:grid-cols-[3fr_1fr] sm:gap-x-8'>
+      <section aria-label='Posts list' class='animate' id='content'>
+        {
+          page.data.length === 0 ? (
+            <p class='text-muted-foreground'>
+              {selectedKinds.length ? (
+                <>
+                  Nothing of that kind yet.{' '}
+                  <a class='underline underline-offset-4 hover:text-primary' href='/writing'>
+                    Clear the filter
+                  </a>
+                  .
+                </>
+              ) : (
+                'No posts yet.'
+              )}
+            </p>
+          ) : (
+            <>
+              {/* header */}
+              <div class='mb-3 flex flex-col justify-between text-sm sm:mb-5 sm:flex-row'>
+                <span class='text-muted-foreground'>
+                  Page {page.currentPage} - Showing {page.data.length} of {collectionsCount} posts
+                </span>
+                <a aria-label='View all posts by years' href='/archives' data-astro-prefetch>
+                  View all posts by years →
+                </a>
+              </div>
+              {/* posts */}
+              {/* Two columns, every card the same width. Articles used to span
+                  two of three columns, which left a ragged empty cell whenever
+                  the row didn't divide evenly. Elevation still marks them out. */}
+              {/* Cards stretch to the tallest in their row (the grid default), and
+                  each card's image grows to absorb whatever height its text didn't
+                  use - so rows stay flush without leaving dead space inside the
+                  shorter cards. */}
+              <ul class='grid grid-cols-1 gap-4 text-start sm:grid-cols-2'>
+                {page.data.map((post, i) => (
+                  <WritingCard {post} eager={i < 2} />
                 ))}
               </ul>
-              <span class='mt-4 block sm:text-end'>
-                <a aria-label='View post categories' href='/tags' data-astro-prefetch>
-                  View all →
-                </a>
-              </span>
-            </aside>
-          )}
-        </div>
-      )
-    }
+              <Paginator {...paginationProps} />
+            </>
+          )
+        }
+      </section>
+
+      {/* sidebar */}
+      {
+        !!uniqueTags.length && (
+          <aside class='animate' id='sidebar'>
+            <h2 class='mb-4 flex items-center text-lg font-semibold'>
+              <Icon name='tag-2' class='me-2' />
+              Tags
+            </h2>
+            <ul class='text-bgColor flex flex-wrap gap-2'>
+              {uniqueTags.map((tag) => (
+                <li>
+                  <Button title={tag} href={`/tags/${tag}`} variant='pill' />
+                </li>
+              ))}
+            </ul>
+            <span class='mt-4 block sm:text-end'>
+              <a aria-label='View post categories' href='/tags' data-astro-prefetch>
+                View all →
+              </a>
+            </span>
+          </aside>
+        )
+      }
+    </div>
   </main>
 </PageLayout>

@@ -2,17 +2,16 @@
 import { Button, FormattedDate, Icon } from 'astro-pure/user'
 
 import type { PostKind, WritingCollectionPost } from '../../lib/sanity'
-import { KINDS } from '../../lib/sanity-helpers'
+import { KINDS, postHref } from '../../lib/sanity-helpers'
 
 /**
  * One tile in the writing grid.
  *
- * Hierarchy is carried by **size** - an article occupies two cells, everything
- * else one - with a small mark and word in the meta line to make the kind
- * explicit. Earlier attempts tied identity to whether a post had a hero image,
- * which broke as soon as notes had images too: it made the mark an exception
- * rather than a system. Now every card shows its image and every card names its
- * kind.
+ * Every card is the same size, and the kind is carried by elevation plus a mark
+ * and word in the meta line. Two earlier approaches are worth not repeating:
+ * tying identity to whether a post had a hero image broke as soon as notes had
+ * images too, and giving articles a double-width span left a stranded empty cell
+ * whenever two of them shared a row.
  *
  * Separate from astro-pure's `PostPreview` rather than a rewrite of it, because
  * that component is still used unmodified by the tag pages.
@@ -23,30 +22,40 @@ interface Props {
   eager?: boolean
 }
 
-/** Articles are wider, thicker-edged, and carry the site's only resting shadow. */
+/**
+ * Every card is the same width - half the column - so a row always divides
+ * evenly. Articles used to span two of three columns, which read well until two
+ * of them landed in the same row and left a third cell stranded empty.
+ *
+ * With size gone, weight carries the tier instead, in three steps: an article is
+ * filled, thick-edged and railed; a guide is a plain outline; a note has neither
+ * border nor fill and sits flat on the page.
+ */
 const TIERS = {
-  article: 'sm:col-span-2 border-2 shadow-sm bg-background hover:bg-muted',
+  // No border utility: an article's edge is drawn by the two rings in the style
+  // block below, so the coloured one can be the outermost thing on the card.
+  article: 'shadow-sm bg-muted/60 hover:bg-muted',
   guide: 'border bg-background hover:bg-muted',
-  note: 'border bg-background hover:bg-muted'
+  note: 'hover:bg-muted'
 } as const satisfies Record<PostKind, string>
 
 /**
- * Only the note's panel flexes, and that asymmetry is the whole trick.
+ * The image panel is the only thing on the card that stretches, on every kind.
  *
- * An article's panel is pinned short, so its card height is deterministic and it
- * is the tallest thing in the row. A note has no description, so it would come up
- * short by those lines - its panel grows to absorb exactly that much, leaving no
- * dead space and no ragged bottoms.
+ * Grid rows are as tall as their tallest card, so a shorter card has slack to
+ * place. It has to go into the panel: left anywhere below, it shows up as a gap
+ * between the date line and the tags. A note therefore gets a taller image than
+ * an article and its text starts further down the card - which is the intended
+ * distinction, not something to correct for.
  *
- * Letting *every* panel flex was the previous mistake: with no fixed height an
- * image renders at its natural aspect ratio, and a wide hero on a double-width
- * card dragged the entire row to an absurd height.
+ * The image is absolutely positioned inside this box rather than being the box.
+ * As a flex item it contributed its natural aspect ratio to the row's intrinsic
+ * height, so a tall hero dragged the whole row with it; capping that with a
+ * `max-h` then stopped the panel growing far enough to swallow the slack. Out
+ * of flow it contributes nothing, so the floor is the only height that matters
+ * and the panel can grow without limit.
  */
-const PANEL_SIZE = {
-  article: 'h-32 shrink-0 sm:h-36',
-  guide: 'h-32 shrink-0 sm:h-36',
-  note: 'min-h-[8rem] flex-1 sm:min-h-[9rem]'
-} as const satisfies Record<PostKind, string>
+const PANEL_SIZE = 'relative w-full flex-1 min-h-[7rem] sm:min-h-[8rem]'
 
 /** Beyond two lines an article's card starts driving the whole row too tall. */
 const DESCRIPTION_CLAMP = 'line-clamp-2'
@@ -58,49 +67,47 @@ const { post, eager = false } = Astro.props
 const { data } = post
 const kind = KINDS[data.kind]
 const hero = data.heroImage
+
+// The hero's extracted colour already drove the hover title; the rail puts it to
+// work at rest too, so every article is tinted a little differently. Posts with
+// no hero image fall back to the site accent via the CSS custom property default.
+const cardStyle = hero?.color
+  ? `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)));--card-rail:${hero.color}`
+  : undefined
 ---
 
 <li
   class:list={[
-    'writing-card group/card flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
-    TIERS[data.kind]
+    'writing-card group/card relative flex flex-col overflow-hidden rounded-2xl transition-all ease-in-out',
+    TIERS[data.kind],
+    data.kind === 'article' && 'card-railed'
   ]}
-  style={hero?.color &&
-    `--card-highlight:color-mix(in srgb,${hero.color} 40%,hsl(var(--foreground)/var(--un-text-opacity,1)))`}
+  style={cardStyle}
 >
-  <a class='flex flex-1 flex-col' href={`/writing/${post.slug}`} data-astro-prefetch>
-    {
-      hero ? (
-        <img
-          src={hero.src}
-          alt={hero.alt || data.title}
-          width={hero.width}
-          height={hero.height}
-          class:list={[
-            'card-panel w-full object-cover transition-opacity duration-300 group-hover/card:opacity-90',
-            PANEL_SIZE[data.kind]
-          ]}
-          loading={eager ? 'eager' : 'lazy'}
-          decoding='async'
-        />
-      ) : (
-        <div
-          class:list={[
-            'card-panel flex w-full items-center justify-center bg-muted/60',
-            PANEL_SIZE[data.kind]
-          ]}
-          aria-hidden='true'
-        >
-          <Icon name={kind.icon} class='size-12 text-muted-foreground/45' />
-        </div>
-      )
-    }
+  <a class='flex flex-1 flex-col' href={postHref(post)} data-astro-prefetch>
+    <div class:list={['card-panel', PANEL_SIZE, !hero && 'bg-muted/60']}>
+      {
+        hero ? (
+          <img
+            src={hero.src}
+            alt={hero.alt || data.title}
+            class='absolute inset-0 size-full object-cover transition-opacity duration-300 group-hover/card:opacity-90'
+            loading={eager ? 'eager' : 'lazy'}
+            decoding='async'
+          />
+        ) : (
+          <span class='absolute inset-0 flex items-center justify-center' aria-hidden='true'>
+            <Icon name={kind.icon} class='size-12 text-muted-foreground/45' />
+          </span>
+        )
+      }
+    </div>
 
     {
       /* Pulled up under the fade, so the text begins where the image dissolves
         rather than after it. */
     }
-    <div class='-mt-4 flex shrink-0 flex-col gap-y-1 px-4 pb-2'>
+    <div class='-mt-4 flex shrink-0 flex-col gap-y-0.5 px-4 pb-1.5'>
       <span class='card-title font-display font-medium transition-colors'>
         {data.draft && <span class='text-red-500'>(Draft) </span>}
         {data.title}
@@ -129,7 +136,7 @@ const hero = data.heroImage
   }
   {
     !!data.tags.length && (
-      <ul class='tag-list flex flex-wrap gap-1.5 px-4 pb-3.5 pt-1'>
+      <ul class='tag-list flex flex-wrap gap-1.5 px-4 pb-3 pt-1'>
         {data.tags.slice(0, MAX_TAGS).map((tag: string) => (
           <li>
             <Button
@@ -149,6 +156,41 @@ const hero = data.heroImage
   /* An article's card borrows its own hero colour for the title on hover. */
   .writing-card:hover .card-title {
     color: var(--card-highlight, hsl(var(--primary) / var(--un-text-opacity, 1)));
+  }
+
+  /* An article's edge is two stacked rings rather than a border.
+
+     A real border plus an overlay ring reads as two rings, because a pseudo-
+     element at `inset: 0` sits against the padding box - inside the border. And
+     a coloured `border-top` can't be the answer either: CSS mitres adjacent
+     border colours along the corner's diagonal, so the colour hands off to the
+     side colour mid-arc and no property pushes it further.
+
+     So: no border on the card at all. `::before` draws the neutral ring and
+     `::after` draws the same ring in the rail colour, masked to fade out down
+     the sides. Identical geometry, so the coloured one simply replaces the
+     neutral one where it is opaque - one ring, outermost, changing colour.
+
+     Solid past 18px so it clears the 1rem corner arc before starting to fade. */
+  .writing-card.card-railed::before,
+  .writing-card.card-railed::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .writing-card.card-railed::before {
+    border-color: hsl(var(--border));
+  }
+
+  /* Falls back to the site accent for an article with no hero colour. */
+  .writing-card.card-railed::after {
+    border-color: var(--card-rail, hsl(var(--primary)));
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
+    mask-image: linear-gradient(to bottom, #000 0, #000 18px, transparent 44px);
   }
 
   /* The image dissolves into the card instead of stopping at a rule. Doing this

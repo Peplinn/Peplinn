@@ -1,6 +1,6 @@
 import type { Icons } from 'packages/pure/libs/icons'
 
-import type { PostKind, WritingCollectionPost } from './sanity'
+import { POST_KINDS, type PostKind, type WritingCollectionPost } from './sanity'
 
 /**
  * The reader-facing name and mark for each kind of writing. One place, so the
@@ -33,4 +33,34 @@ export function getSanityTagsWithCount(posts: WritingCollectionPost[]) {
 
 export function getSanityTags(posts: WritingCollectionPost[]) {
   return [...new Set(posts.flatMap((p) => p.data.tags))]
+}
+
+/**
+ * Where a post lives. Articles and notes sit at /writing/<slug>; a guide is its
+ * own document type with children, so it lives at /guides/<slug> and its steps
+ * hang underneath. One helper because four places build this link - listings,
+ * rows, the feed and the search index - and they must not drift apart.
+ */
+export function postHref(post: WritingCollectionPost): string {
+  return post.data.kind === 'guide' ? `/guides/${post.slug}` : `/writing/${post.slug}`
+}
+
+/**
+ * The kinds selected in `?type=article&type=note`, validated against the real
+ * list so a hand-edited URL can't put junk into the filter UI. Filtering
+ * `POST_KINDS` rather than the raw values also dedupes and forces a stable
+ * order, whatever order the query string happened to arrive in.
+ */
+export function parseSelectedKinds(searchParams: URLSearchParams): PostKind[] {
+  const raw = searchParams.getAll('type')
+  return POST_KINDS.filter((kind) => raw.includes(kind))
+}
+
+/** Totals per kind, for the counts beside each row of the filter checklist. */
+export function countByKind(posts: WritingCollectionPost[]): Record<PostKind, number> {
+  const counts = Object.fromEntries(POST_KINDS.map((kind) => [kind, 0])) as Record<PostKind, number>
+  posts.forEach((post) => {
+    counts[post.data.kind] += 1
+  })
+  return counts
 }

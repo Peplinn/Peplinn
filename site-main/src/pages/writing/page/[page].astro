@@ -1,15 +1,24 @@
 ---
 import WritingList from '@/components/writing/WritingList.astro'
 import config from '@/site-config'
+
 import { getSanityPosts } from '../../../lib/sanity'
+import { countByKind, parseSelectedKinds } from '../../../lib/sanity-helpers'
 import { CACHE, cacheable, paginate } from '../../../lib/ssr'
 
 export const prerender = false
 
 cacheable(Astro.response.headers, CACHE.listing)
 
-const collections = await getSanityPosts()
-const uniqueTags = [...new Set(collections.flatMap((post) => post.data.tags))] as string[]
+const allPosts = await getSanityPosts()
+
+const uniqueTags = [...new Set(allPosts.flatMap((post) => post.data.tags))] as string[]
+const kindCounts = countByKind(allPosts)
+
+const selectedKinds = parseSelectedKinds(Astro.url.searchParams)
+const collections = selectedKinds.length
+  ? allPosts.filter((post) => selectedKinds.includes(post.data.kind))
+  : allPosts
 
 const page = paginate(collections, {
   pageParam: Astro.params.page,
@@ -18,8 +27,16 @@ const page = paginate(collections, {
   pageSize: config.content.blogPageSize
 })
 
-// Page 1 is served from /writing, and anything past the last page doesn't exist.
-if (!page) return Astro.redirect('/writing')
+// Page 1 is served from /writing, and anything past the last page doesn't exist
+// - which a filter can cause, by shrinking the set under your feet. Carry the
+// query string over so falling back to page 1 doesn't also drop the filter.
+if (!page) return Astro.redirect(`/writing${Astro.url.search}`)
 ---
 
-<WritingList {page} {uniqueTags} collectionsCount={collections.length} />
+<WritingList
+  {page}
+  {uniqueTags}
+  {selectedKinds}
+  {kindCounts}
+  collectionsCount={collections.length}
+/>

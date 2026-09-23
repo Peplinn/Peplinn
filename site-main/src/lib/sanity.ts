@@ -271,8 +271,8 @@ export async function getSanityPosts(): Promise<WritingCollectionPost[]> {
   // published document. Ordering by `_updatedAt` puts the draft first, and the
   // dedupe below keeps it. Production filters drafts out at the query.
   const query = draftMode
-    ? `*[_type == "blogPost"] | order(_updatedAt desc) { ${POST_PROJECTION} }`
-    : `*[_type == "blogPost" && !(_id in path("drafts.**"))] | order(publishedAt desc) { ${POST_PROJECTION} }`
+    ? `*[_type in ["blogPost", "guide"]] | order(_updatedAt desc) { ${POST_PROJECTION} }`
+    : `*[_type in ["blogPost", "guide"] && !(_id in path("drafts.**"))] | order(publishedAt desc) { ${POST_PROJECTION} }`
 
   const rawPosts = await getClient().fetch(query)
 
@@ -472,4 +472,112 @@ export async function getTilCount(): Promise<number> {
     ? `*[_type == "til"]`
     : `*[_type == "til" && !(_id in path("drafts.**"))]`
   return getClient().fetch(`count(${filter})`)
+}
+
+export type GuideStep = {
+  slug: string
+  title: string
+  description: string
+  content: string
+}
+
+export type Guide = {
+  slug: string
+  title: string
+  description: string
+  content: string
+  publishDate: Date
+  tags: string[]
+  steps: GuideStep[]
+}
+
+/**
+ * A guide by slug, with its steps already resolved and in order. Not routed
+ * through `getSanityPosts()` / `WritingCollectionPost` - a guide isn't a flat
+ * article, it has children, and this page renders its own template rather than
+ * reusing `BlogPost.astro`.
+ *
+ * `sections[]->` dereferences by the reference's stored id, which is normally
+ * the published document. A step that exists only as an unpublished draft (never
+ * published, then referenced) can dereference to null in draft mode - a known
+ * edge case, not handled here, since there's no content yet that hits it.
+ */
+export async function getGuideBySlug(slug: string): Promise<Guide | null> {
+  const draftMode = isDraftMode()
+  const query = draftMode
+    ? `*[_type == "guide" && slug.current == $slug] | order(_updatedAt desc) [0]`
+    : `*[_type == "guide" && slug.current == $slug && !(_id in path("drafts.**"))] [0]`
+
+  const raw = await getClient().fetch(
+    `${query} {
+      title,
+      description,
+      content,
+      publishedAt,
+      _updatedAt,
+      _createdAt,
+      "tagTitles": tags[]->title,
+      "steps": sections[]-> { title, description, content, "slug": slug.current }
+    }`,
+    { slug }
+  )
+
+  if (!raw) return null
+
+  return {
+    slug,
+    title: raw.title,
+    description: raw.description || '',
+    content: raw.content || '',
+    publishDate: toValidDate(raw.publishedAt, raw._updatedAt, raw._createdAt),
+    tags: normalizeTags(raw),
+    steps: (raw.steps || []).filter((s: GuideStep | null): s is GuideStep => s !== null)
+  }
+}
+
+export type NewsletterIssue = {
+  slug: string
+  title: string
+  description: string
+  content: string
+  publishDate: Date
+}
+
+function mapNewsletterIssue(issue: any): NewsletterIssue {
+  return {
+    slug: issue.slug,
+    title: issue.title,
+    description: issue.description || '',
+    content: issue.content || '',
+    publishDate: toValidDate(issue.publishedAt, issue._updatedAt, issue._createdAt)
+  }
+}
+
+/** Newest issues first. */
+export async function getNewsletterIssues(): Promise<NewsletterIssue[]> {
+  const filter = isDraftMode()
+    ? `*[_type == "newsletterIssue"]`
+    : `*[_type == "newsletterIssue" && !(_id in path("drafts.**"))]`
+
+  const issues = await getClient().fetch(
+    `${filter} | order(publishedAt desc) {
+      title, description, content, publishedAt, _updatedAt, _createdAt, "slug": slug.current
+    }`
+  )
+
+  return issues.map(mapNewsletterIssue)
+}
+
+export async function getNewsletterIssue(slug: string): Promise<NewsletterIssue | null> {
+  const draftMode = isDraftMode()
+  const query = draftMode
+    ? `*[_type == "newsletterIssue" && slug.current == $slug] | order(_updatedAt desc) [0]`
+    : `*[_type == "newsletterIssue" && slug.current == $slug && !(_id in path("drafts.**"))] [0]`
+
+  const raw = await getClient().fetch(
+    `${query} { title, description, content, publishedAt, _updatedAt, _createdAt, "slug": slug.current }`,
+    { slug }
+  )
+
+  return raw ? mapNewsletterIssue(raw) : null
 }
