@@ -25,18 +25,23 @@ export function isDraftMode(): boolean {
 }
 
 /**
- * Draft mode bypasses the Sanity CDN entirely and authenticates, so unpublished
- * edits show up on the very next request. Production reads through the CDN, which
- * Sanity purges on publish - fresh within seconds, without paying an uncached API
- * round trip per page view.
+ * Every read authenticates, published content included, because the dataset is
+ * private - without a token nothing resolves at all. `SANITY_API_TOKEN` must be
+ * set wherever this runs, local dev included.
+ *
+ * `useCdn: false` follows from that: authenticated responses shouldn't sit in a
+ * shared cache. The cost is paid back one layer up, where `cacheable()` puts
+ * every page behind Vercel's edge with stale-while-revalidate - so a cache miss,
+ * not a page view, is what reaches Sanity.
+ *
+ * Draft visibility is decided in the queries rather than here; this only
+ * controls how we connect.
  */
 function getClient() {
-  return isDraftMode()
-    ? baseClient.withConfig({
-        useCdn: false,
-        token: readEnv('SANITY_API_TOKEN')
-      })
-    : baseClient.withConfig({ useCdn: true })
+  return baseClient.withConfig({
+    useCdn: false,
+    token: readEnv('SANITY_API_TOKEN')
+  })
 }
 
 export const sanityClient = getClient()
@@ -553,31 +558,28 @@ function mapNewsletterIssue(issue: any): NewsletterIssue {
   }
 }
 
-/** Newest issues first. */
+const NEWSLETTER_PROJECTION = `
+  title, description, content, publishedAt, _updatedAt, _createdAt, "slug": slug.current
+`
+
+/** Published issues, newest first. */
 export async function getNewsletterIssues(): Promise<NewsletterIssue[]> {
   const filter = isDraftMode()
     ? `*[_type == "newsletterIssue"]`
     : `*[_type == "newsletterIssue" && !(_id in path("drafts.**"))]`
 
   const issues = await getClient().fetch(
-    `${filter} | order(publishedAt desc) {
-      title, description, content, publishedAt, _updatedAt, _createdAt, "slug": slug.current
-    }`
+    `${filter} | order(publishedAt desc) { ${NEWSLETTER_PROJECTION} }`
   )
 
   return issues.map(mapNewsletterIssue)
 }
 
 export async function getNewsletterIssue(slug: string): Promise<NewsletterIssue | null> {
-  const draftMode = isDraftMode()
-  const query = draftMode
+  const query = isDraftMode()
     ? `*[_type == "newsletterIssue" && slug.current == $slug] | order(_updatedAt desc) [0]`
     : `*[_type == "newsletterIssue" && slug.current == $slug && !(_id in path("drafts.**"))] [0]`
 
-  const raw = await getClient().fetch(
-    `${query} { title, description, content, publishedAt, _updatedAt, _createdAt, "slug": slug.current }`,
-    { slug }
-  )
-
+  const raw = await getClient().fetch(`${query} { ${NEWSLETTER_PROJECTION} }`, { slug })
   return raw ? mapNewsletterIssue(raw) : null
 }

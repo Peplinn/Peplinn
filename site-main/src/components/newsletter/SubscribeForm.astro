@@ -1,0 +1,98 @@
+---
+/**
+ * Posts to `/api/subscribe` rather than to Resend, because the API key has to
+ * stay on the server.
+ *
+ * Works as a plain form with no JavaScript - it submits, the route redirects
+ * back with `?subscribed=`, and the message below renders server-side. The
+ * script upgrades that to an inline response without a page reload.
+ */
+interface Props {
+  /** Set from the `?subscribed=` param after a no-JS submission. */
+  status?: 'yes' | 'no' | null
+}
+
+const { status = null } = Astro.props
+---
+
+<section class='subscribe not-prose rounded-xl border bg-muted/50 px-4 py-3'>
+  <form
+    class='flex flex-col gap-2 sm:flex-row sm:items-center'
+    method='post'
+    action='/api/subscribe'
+  >
+    <label class='sr-only' for='subscribe-email'>Email address</label>
+    <input
+      id='subscribe-email'
+      type='email'
+      name='email'
+      required
+      autocomplete='email'
+      placeholder='you@email.com'
+      class='w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none transition-colors focus:border-foreground'
+    />
+    <button
+      type='submit'
+      class='shrink-0 rounded-lg border border-foreground bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60'
+    >
+      Subscribe
+    </button>
+  </form>
+
+  <p
+    class='subscribe-message mt-2 text-xs text-muted-foreground empty:mt-0'
+    role='status'
+    aria-live='polite'
+    data-state={status ?? undefined}
+  >
+    {status === 'yes' && 'Thanks - check your inbox to confirm.'}
+    {status === 'no' && 'Something went wrong. Please try again.'}
+  </p>
+</section>
+
+<style>
+  .subscribe-message[data-state='yes'] {
+    color: hsl(var(--primary));
+  }
+  .subscribe-message[data-state='no'] {
+    color: hsl(var(--destructive));
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('.subscribe form').forEach((form) => {
+    const section = form.closest('.subscribe')!
+    const message = section.querySelector<HTMLParagraphElement>('.subscribe-message')!
+    const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      const email = new FormData(form).get('email')
+      button.disabled = true
+      message.dataset.state = ''
+      message.textContent = 'Subscribing...'
+
+      try {
+        const response = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+        const result = (await response.json()) as { ok: boolean; message?: string }
+
+        message.dataset.state = result.ok ? 'yes' : 'no'
+        message.textContent = result.ok
+          ? 'Thanks - check your inbox to confirm.'
+          : (result.message ?? 'Something went wrong. Please try again.')
+
+        if (result.ok) form.reset()
+      } catch {
+        message.dataset.state = 'no'
+        message.textContent = 'Could not reach the server. Please try again.'
+      } finally {
+        button.disabled = false
+      }
+    })
+  })
+</script>

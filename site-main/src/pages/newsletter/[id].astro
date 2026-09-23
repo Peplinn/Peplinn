@@ -1,6 +1,7 @@
 ---
 import { Button, FormattedDate } from 'astro-pure/user'
 import PageLayout from '@/layouts/BaseLayout.astro'
+import SubscribeForm from '@/components/newsletter/SubscribeForm.astro'
 
 import { renderMarkdown } from '../../lib/markdown'
 import { getNewsletterIssue } from '../../lib/sanity'
@@ -19,9 +20,7 @@ const html = await renderMarkdown(issue.content)
 
 const meta = {
   description: issue.description || 'A newsletter issue.',
-  title: issue.title,
-  // Same reasoning as /newsletter: reachable by direct link, not yet launched.
-  noindex: true
+  title: issue.title
 }
 ---
 
@@ -30,10 +29,16 @@ const meta = {
 
   <main class='mt-6 lg:mt-10'>
     <div id='content-header' class='animate'>
-      <FormattedDate class='text-xs text-muted-foreground' date={issue.publishDate} />
-      <h1 class='mb-3 mt-1 text-3xl font-medium'>{issue.title}</h1>
+      <FormattedDate class='font-meta text-xs text-muted-foreground' date={issue.publishDate} />
+      <h1 class='mb-2 mt-1 text-3xl font-medium'>{issue.title}</h1>
+      {issue.description && <p class='text-muted-foreground'>{issue.description}</p>}
     </div>
 
-    <article class='prose prose-pure dark:prose-invert max-w-none' set:html={html} />
+    <article class='prose prose-pure dark:prose-invert mt-8 max-w-none' set:html={html} />
+
+    {/* Someone reading a back issue is the likeliest person to subscribe. */}
+    <div class='mt-12'>
+      <SubscribeForm />
+    </div>
   </main>
 </PageLayout>
