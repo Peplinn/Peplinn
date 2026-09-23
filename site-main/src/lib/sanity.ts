@@ -25,23 +25,22 @@ export function isDraftMode(): boolean {
 }
 
 /**
- * Every read authenticates, published content included, because the dataset is
- * private - without a token nothing resolves at all. `SANITY_API_TOKEN` must be
- * set wherever this runs, local dev included.
+ * Draft mode bypasses the Sanity CDN entirely and authenticates, so unpublished
+ * edits show up on the very next request. Production reads through the CDN,
+ * which Sanity purges on publish - fresh within seconds, without paying an
+ * uncached API round trip per page view.
  *
- * `useCdn: false` follows from that: authenticated responses shouldn't sit in a
- * shared cache. The cost is paid back one layer up, where `cacheable()` puts
- * every page behind Vercel's edge with stale-while-revalidate - so a cache miss,
- * not a page view, is what reaches Sanity.
- *
- * Draft visibility is decided in the queries rather than here; this only
- * controls how we connect.
+ * Production needs no token: the dataset is public, so published documents
+ * resolve anonymously. Drafts don't - the `drafts.` path requires auth whatever
+ * the dataset's visibility - which is why only this branch carries one.
  */
 function getClient() {
-  return baseClient.withConfig({
-    useCdn: false,
-    token: readEnv('SANITY_API_TOKEN')
-  })
+  return isDraftMode()
+    ? baseClient.withConfig({
+        useCdn: false,
+        token: readEnv('SANITY_API_TOKEN')
+      })
+    : baseClient.withConfig({ useCdn: true })
 }
 
 export const sanityClient = getClient()
