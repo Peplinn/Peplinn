@@ -45,7 +45,7 @@ const { status = null } = Astro.props
     aria-live='polite'
     data-state={status ?? undefined}
   >
-    {status === 'yes' && 'Thanks - check your inbox to confirm.'}
+    {status === 'yes' && 'Thanks! Check your inbox for a confirmation link.'}
     {status === 'no' && 'Something went wrong. Please try again.'}
   </p>
 </section>
@@ -83,7 +83,7 @@ const { status = null } = Astro.props
 
         message.dataset.state = result.ok ? 'yes' : 'no'
         message.textContent = result.ok
-          ? 'Thanks - check your inbox to confirm.'
+          ? 'Thanks! Check your inbox for a confirmation link.'
           : (result.message ?? 'Something went wrong. Please try again.')
 
         if (result.ok) form.reset()

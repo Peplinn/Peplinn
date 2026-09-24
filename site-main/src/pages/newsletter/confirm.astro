@@ -1,0 +1,60 @@
+---
+import { Button } from 'astro-pure/user'
+import PageLayout from '@/layouts/BaseLayout.astro'
+
+import { confirm } from '../../lib/resend'
+import { noStore } from '../../lib/ssr'
+
+export const prerender = false
+
+// Never cached: the result is specific to one link, and a cached "confirmed"
+// served to the next visitor would be both wrong and a small privacy leak.
+noStore(Astro.response.headers)
+
+const params = Astro.url.searchParams
+const outcome = await confirm(
+  params.get('email') ?? '',
+  params.get('exp') ?? '',
+  params.get('token') ?? ''
+)
+
+const COPY = {
+  confirmed: {
+    heading: "You're subscribed",
+    body: 'Thanks for confirming. The next issue will land in your inbox.'
+  },
+  expired: {
+    heading: 'That link has expired',
+    body: 'Confirmation links are good for a week. Sign up again and a fresh one will be sent.'
+  },
+  invalid: {
+    heading: "That link didn't work",
+    body: 'It may have been altered in transit, or already used. Signing up again will send a new one.'
+  }
+} as const
+
+const { heading, body } = COPY[outcome]
+
+const meta = { description: heading, title: heading, noindex: true }
+---
+
+<PageLayout {meta}>
+  <Button title='Newsletter' href='/newsletter' variant='back' />
+
+  <main class='mt-6 lg:mt-10'>
+    <div id='content-header' class='animate'>
+      <h1 class='mb-2 mt-6 text-3xl font-medium sm:mt-10'>{heading}</h1>
+      <p class='text-muted-foreground'>{body}</p>
+
+      {
+        outcome !== 'confirmed' && (
+          <p class='mt-6'>
+            <a class='underline underline-offset-4 hover:text-primary' href='/newsletter'>
+              Back to the newsletter
+            </a>
+          </p>
+        )
+      }
+    </div>
+  </main>
+</PageLayout>

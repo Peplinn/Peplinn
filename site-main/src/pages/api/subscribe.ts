@@ -11,7 +11,7 @@ export const prerender = false
  * JavaScript disabled - in that case it redirects back with a status in the
  * query string rather than answering JSON.
  */
-export const POST: APIRoute = async ({ request, redirect }) => {
+export const POST: APIRoute = async ({ request, redirect, url }) => {
   const contentType = request.headers.get('content-type') ?? ''
   const wantsJson = contentType.includes('application/json')
 
@@ -28,8 +28,11 @@ export const POST: APIRoute = async ({ request, redirect }) => {
   // out-thinks it would only reject addresses that actually work.
   const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
+  // `url.origin` rather than a configured base, so the confirmation link points
+  // back at whichever host was actually used - localhost in dev, the preview
+  // deployment on a branch, the real domain in production.
   const result = looksLikeEmail
-    ? await subscribe(email)
+    ? await subscribe(email, url.origin)
     : ({ ok: false, message: 'That does not look like an email address.' } as const)
 
   if (wantsJson) {
