@@ -11,9 +11,19 @@ const { selector = config.integ.mediumZoom.selector, background = 'hsl(var(--bac
   Astro.props
 ---
 
-<script is:inline src={`${config.npmCDN}/medium-zoom/dist/pure/medium-zoom.min.umd.js`}></script>
-<script is:inline define:vars={{ selector, background }}>
-  mediumZoom(selector, { background })
+{/* Bundled from npm rather than pulled from jsDelivr: the CDN copy was an
+    unversioned, parser-blocking third-party script with a one-week cache. As a
+    module it is deferred, hashed and cached for a year with the rest of the site.
+    The "pure" build leaves styling to the global styles below. */}
+<medium-zoom-config data-selector={selector} data-background={background} hidden
+></medium-zoom-config>
+<script>
+  import mediumZoom from 'medium-zoom/dist/pure'
+
+  const config = document.querySelector<HTMLElement>('medium-zoom-config')
+  if (config?.dataset.selector) {
+    mediumZoom(config.dataset.selector, { background: config.dataset.background })
+  }
 </script>
 <style is:global>
   .medium-zoom-overlay {

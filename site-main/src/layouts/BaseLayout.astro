@@ -7,6 +7,12 @@ import type { SiteMeta } from 'astro-pure/types'
 import BaseHead from '@/components/BaseHead.astro'
 import config from '@/site-config'
 
+// Self-hosted fonts (see the note in app.css). Latin-ext files are split out by
+// unicode-range, so they only download for text that needs them.
+import '@fontsource-variable/albert-sans/wght.css'
+import '@fontsource-variable/albert-sans/wght-italic.css'
+import '@fontsource/chelsea-market/400.css'
+
 // Import the global.css file here so that it is included on
 // all pages through the use of the <BaseLayout /> component.
 import '@/assets/styles/app.css'
@@ -67,6 +73,7 @@ const {
       // Imported rather than referenced by absolute path: `src="/src/..."` is treated
       // as an external URL, so it is never bundled and 404s in production.
       import '../scripts/code-copy'
+      import '../scripts/lazy-video'
     </script>
   </body>
 </html>

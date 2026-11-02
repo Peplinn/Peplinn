@@ -47,7 +47,11 @@ const recentPosts = (await getSanityPosts()).slice(0, RECENT_POSTS)
         src={portrait}
         alt='profile'
         class='h-24 w-24 flex-shrink-0 rounded-full border p-1'
+        width={96}
+        height={96}
+        densities={[1, 2, 3]}
         loading='eager'
+        fetchpriority='high'
       />
 
       <div class='flex flex-col gap-y-1'>

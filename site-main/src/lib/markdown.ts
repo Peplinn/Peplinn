@@ -119,6 +119,30 @@ function escapeAttr(value: string) {
     .replace(/>/g, '&gt;')
 }
 
+/** `![alt](….mp4)` / `.webm` / `.mov`, optionally followed by a query or `#WxH`. */
+const VIDEO_RE = /\.(mp4|webm|mov)(?:[?#]|$)/i
+
+/** The Studio appends a video's dimensions on upload as `#1280x720`; see CustomMarkdownInput. */
+const VIDEO_DIMS_RE = /#(\d+)x(\d+)$/
+
+/**
+ * A video written as a markdown image becomes a silent, looping clip - the GIF
+ * replacement. It costs nothing at page load: `preload="none"` and no `autoplay`,
+ * so not a byte is fetched until `scripts/lazy-video.ts` sees it approach the
+ * viewport and starts it (and pauses it again once it leaves). Readers who ask
+ * for reduced motion get a still box with controls instead of an autoplaying loop.
+ */
+function renderVideo(href: string, alt: string) {
+  const [, w, h] = VIDEO_DIMS_RE.exec(href) ?? []
+  // Without dimensions the box has no height until the video's metadata arrives,
+  // which shifts everything below it; `aspect-ratio` reserves the space up front.
+  const dims = w && h ? ` width="${w}" height="${h}" style="aspect-ratio:${w}/${h}"` : ''
+  const src = escapeAttr(href.replace(VIDEO_DIMS_RE, ''))
+  const label = alt ? ` aria-label="${alt}"` : ''
+
+  return `<video data-lazy-video src="${src}"${dims}${label} muted loop playsinline preload="none" class="lazy-video"></video>`
+}
+
 /**
  * Post bodies are author-written markdown, so every `![]()` used to become a bare
  * `<img>` - no lazy loading, no intrinsic size (hence layout shift on every image),
@@ -127,7 +151,7 @@ function escapeAttr(value: string) {
  * Returns a fresh renderer per document so the "first image" counter is scoped to
  * one render rather than shared across concurrent requests.
  */
-function imageRenderer() {
+function imageRenderer(eagerFirstImage: boolean) {
   let seen = 0
 
   return function image(token: Tokens.Image) {
@@ -135,12 +159,18 @@ function imageRenderer() {
     const alt = escapeAttr(token.text ?? '')
     const title = token.title ? ` title="${escapeAttr(token.title)}"` : ''
 
-    // Only the first image is plausibly above the fold; eagerly loading the rest
-    // is what made image-heavy posts so slow to settle.
-    const loading =
-      seen++ === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" decoding="async"'
+    if (VIDEO_RE.test(href)) return renderVideo(href, alt)
 
     const sanity = SANITY_IMAGE_RE.exec(href)
+    const isGif = sanity?.[3].toLowerCase() === 'gif'
+
+    // Only the first image is plausibly above the fold; eagerly loading the rest
+    // is what made image-heavy posts so slow to settle. Even that one is lazy
+    // when the page already has a hero above it, and a GIF never jumps the
+    // queue: an un-resizable multi-megabyte GIF fetched at high priority starved
+    // the hero image and pushed mobile LCP on the snowplow post to 17s.
+    const eager = eagerFirstImage && seen++ === 0 && !isGif
+    const loading = eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" decoding="async"'
 
     // Someone else's host: no dimensions are derivable and we cannot resize it,
     // so lazy loading is all that's on offer.
@@ -148,14 +178,14 @@ function imageRenderer() {
       return `<img src="${escapeAttr(href)}" alt="${alt}"${title} ${loading} class="zoomable" />`
     }
 
-    const [, rawWidth, rawHeight, ext] = sanity
+    const [, rawWidth, rawHeight] = sanity
     const width = Number(rawWidth)
     const dims = `width="${width}" height="${Number(rawHeight)}"`
 
-    // Sanity's image API returns only the FIRST FRAME once any transform is
-    // applied, and it has no video output - so an animated GIF must be passed
-    // through completely untouched. There is no server-side way to shrink one.
-    if (ext.toLowerCase() === 'gif') {
+    // Passed through untouched - see `isGif` in lib/sanity.ts for why. A heavy
+    // animation belongs in a video (uploads over the Studio's GIF limit are
+    // refused for exactly this reason).
+    if (isGif) {
       return `<img src="${escapeAttr(href)}" alt="${alt}"${title} ${dims} ${loading} />`
     }
 
@@ -197,10 +227,10 @@ function lazyLoadRawImages(html: string): string {
  * Constructing this is cheap; the expensive part is the highlighter, which stays
  * memoized above.
  */
-async function createMarked() {
+async function createMarked(eagerFirstImage = true) {
   const hl = await getHighlighter()
   const instance = new Marked()
-  instance.use({ renderer: { code: codeRenderer(hl), image: imageRenderer() } })
+  instance.use({ renderer: { code: codeRenderer(hl), image: imageRenderer(eagerFirstImage) } })
   instance.use(markedKatex({ throwOnError: false }))
   // Registered before the built-in blockquote rule gets a look, so `> [!note]`
   // becomes a callout while every other blockquote is left alone.
@@ -210,8 +240,12 @@ async function createMarked() {
   return instance
 }
 
-export async function renderMarkdown(markdown: string) {
-  const instance = await createMarked()
+/**
+ * Pass `hasHero: true` when the page renders a hero image above this content -
+ * that hero is the LCP element, so no body image should compete with it.
+ */
+export async function renderMarkdown(markdown: string, { hasHero = false } = {}) {
+  const instance = await createMarked(!hasHero)
   const html = await instance.parse(markdown || '')
   return lazyLoadRawImages(html)
 }

@@ -11,8 +11,23 @@
   font-style: italic;
   font-display: swap;
 }
+/* The two site faces, defined once. Both are self-hosted through Fontsource and
+   imported in BaseLayout - the Google Fonts stylesheet they replace was
+   render-blocking and cost a cross-origin round trip (~800ms on mobile) before
+   any text could paint. uno.config.ts reads --font-display for prose headings.
+
+   Chelsea Market has a single regular weight. Headings and prose ask for 500-600,
+   and without a bold file the browser fakes one by smearing the outlines, which
+   muddies the letterforms - so `font-synthesis-weight: none` on the display
+   elements below keeps it at the weight it was drawn at. Albert Sans has real
+   weights, so body text is unaffected. Delete those two lines to bring the
+   faux bold back. */
+:root {
+  --font-body: 'Albert Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Chelsea Market', 'Albert Sans Variable', ui-sans-serif, system-ui, sans-serif;
+}
 html {
-  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 17.5px;
 }
 
@@ -24,7 +39,8 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display);
+  font-synthesis-weight: none;
   letter-spacing: -0.01em;
 }
 
@@ -35,7 +51,7 @@ h6,
    the site's own. This is the single place that decides.
    `tabular-nums` keeps the date column in post lists vertically aligned. */
 .font-meta {
-  font-family: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
   font-variant-numeric: tabular-nums;
 }
 
@@ -46,7 +62,8 @@ h6,
 header,
 header-component,
 footer {
-  font-family: 'Autour One', 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display);
+  font-synthesis-weight: none;
   letter-spacing: -0.01em;
 }
 
@@ -312,4 +329,16 @@ details.callout:not([open]) {
 .dark .callout[data-callout='quote'],
 .dark .callout[data-callout='cite'] {
   --callout-color: 240 5% 65%;
+}
+
+/* GIF-replacement clips (renderVideo in lib/markdown.ts). Until the first frame
+   arrives the box is empty, so give it the muted surface rather than a hole, and
+   match the rounded corners prose images get. */
+.lazy-video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  background-color: hsl(var(--muted) / 1);
 }
