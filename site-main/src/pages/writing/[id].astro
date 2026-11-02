@@ -22,7 +22,9 @@ const post = posts.find((p) => p.slug === id)
 // engines and link checkers read the status, not the wording.
 if (!post) return Astro.rewrite('/404')
 
-const htmlContent = await renderMarkdown(post.body)
+const htmlContent = await renderMarkdown(post.body, {
+  hasHero: !!(post.data.heroImage || post.data.heroVideo)
+})
 const headings = await extractHeadings(post.body)
 ---
 

@@ -2,6 +2,8 @@
 import { prod } from 'astro-pure/server'
 import type { SiteMeta } from 'astro-pure/types'
 import config from '@/site-config'
+import albertSans from '@fontsource-variable/albert-sans/files/albert-sans-latin-wght-normal.woff2?url'
+import chelseaMarket from '@fontsource/chelsea-market/files/chelsea-market-latin-400-normal.woff2?url'
 
 type Props = SiteMeta
 
@@ -29,13 +31,14 @@ const socialImageURL = new URL(ogImage ? ogImage : '/images/social-card.png', As
 <link rel='icon' type='image/png' sizes='16x16' href='/favicon/favicon-16x16.png' />
 <link rel='manifest' href='/favicon/site.webmanifest' />
 
-{/* Fonts: Autour One for headings, Albert Sans for body text */}
-<link rel='preconnect' href='https://fonts.googleapis.com' />
-<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
-<link
-  rel='stylesheet'
-  href='https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,400..800;1,400..800&family=Autour+One&display=swap'
-/>
+{
+  /* Fonts: Chelsea Market for headings and chrome, Albert Sans for body text. The
+    @font-face rules come in with BaseLayout's CSS; these preloads let the files
+    start downloading alongside that CSS instead of after it is parsed. Only the
+    faces every page uses above the fold - italics and latin-ext load on demand. */
+}
+<link rel='preload' href={albertSans} as='font' type='font/woff2' crossorigin />
+<link rel='preload' href={chelseaMarket} as='font' type='font/woff2' crossorigin />
 
 {/* Canonical URL */}
 <link rel='canonical' href={canonicalURL} />

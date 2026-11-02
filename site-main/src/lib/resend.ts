@@ -32,9 +32,29 @@ export function resendConfigured(): boolean {
   return Boolean(readEnv('RESEND_API_KEY'))
 }
 
-/** Verified sending identity. Must be on a domain verified in Resend. */
+/**
+ * Verified sending identity. Must be on a domain verified in Resend.
+ *
+ * The root domain rather than the `newsletter.` subdomain: the subdomain would
+ * keep newsletter reputation quarantined from personal mail, but it can't
+ * receive, which rules out attaching a Google Account to the address - and that
+ * is what puts an avatar beside the sender in Gmail. For a small opt-in list the
+ * reputation bleed is the lesser cost.
+ */
 function sender(): string {
-  return readEnv('NEWSLETTER_FROM') ?? 'Ebube <ebube@newsletter.ebubeoluoma.com>'
+  return readEnv('NEWSLETTER_FROM') ?? 'Ebube Oluoma <ebube-reply@ebubeoluoma.com>'
+}
+
+/**
+ * Where replies land, which needn't be the sending address.
+ *
+ * Mail is sent from the `newsletter.` subdomain to keep its reputation separate,
+ * but that's an odd address to hand a reader - this points them at the usual
+ * inbox instead. Omitted entirely when unset, so replies fall back to the
+ * sender.
+ */
+function replyTo(): string | undefined {
+  return readEnv('NEWSLETTER_REPLY_TO')
 }
 
 async function api(path: string, init: RequestInit): Promise<Response | null> {
@@ -138,10 +158,15 @@ export async function subscribe(email: string, origin: string): Promise<Subscrib
 
   const link = confirmationLink(origin, email)
 
+  const replies = replyTo()
+
   const sent = await api('/emails', {
     method: 'POST',
     body: JSON.stringify({
       from: sender(),
+      // Spread rather than a null, so the field is absent when unset - Resend
+      // treats an explicit null differently from an omitted key.
+      ...(replies ? { reply_to: replies } : {}),
       to: [email],
       subject: 'Confirm your subscription',
       text: `Thanks for signing up. Confirm your subscription by opening this link:\n\n${link}\n\nIf you didn't request this, ignore this email - you won't be subscribed.`,

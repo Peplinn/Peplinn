@@ -53,10 +53,12 @@ export function urlFor(source: any) {
 }
 
 /**
- * Sanity's image API returns only the FIRST FRAME of an animated GIF as soon as
- * any transform is applied, and it has no video output - so an animated hero was
- * silently rendering as a still. GIFs are passed through untouched, at the cost
- * of their original weight; there is no server-side way to shrink one.
+ * GIFs are passed through untouched rather than resized and converted like
+ * other images. Not because transforms break animation - tested 2026-11-02,
+ * `?w=…&fm=webp` returns an animated WebP with every frame intact - but because
+ * WebP is not reliably smaller for them: the snowplow body GIF shrank 2.6MB →
+ * 1.8MB while its hero GIF grew 191KB → 280KB. Neither is a real fix for a heavy
+ * animation; re-encoding it as a video is (see `renderVideo` in lib/markdown.ts).
  */
 function isGif(source: unknown): boolean {
   if (typeof source === 'string') return /\.gif(\?|$)/i.test(source)
@@ -131,6 +133,8 @@ export type WritingCollectionPost = {
       height?: number
       inferSize?: boolean
     }
+    /** Plays in the hero in place of `heroImage`, which stays as its poster frame. */
+    heroVideo?: { src: string }
   }
 }
 
@@ -214,6 +218,7 @@ const POST_PROJECTION = `
     ...,
     asset-> { _id, metadata { dimensions } }
   },
+  "heroVideoUrl": heroVideo.asset->url,
   content
 `
 
@@ -263,6 +268,7 @@ function mapPost(post: any): WritingCollectionPost {
       tags: normalizeTags(post),
       minutesRead: readStats.text,
       heroImage: mapHeroImage(post.heroImage, post.title, 900),
+      heroVideo: post.heroVideoUrl ? { src: post.heroVideoUrl } : undefined,
       coverImage: mapHeroImage(post.heroImage, post.title, 400)
     }
   }

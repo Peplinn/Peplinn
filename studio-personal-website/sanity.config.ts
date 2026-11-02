@@ -4,6 +4,7 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes, singletonTypes} from './schemaTypes'
 import {structure} from './structure'
 import { markdownSchema } from 'sanity-plugin-markdown'
+import {CustomMarkdownInput} from './components/CustomMarkdownInput'
 
 export default defineConfig({
   name: 'default',
@@ -12,7 +13,7 @@ export default defineConfig({
   projectId: 'yry247aj',
   dataset: 'production',
 
-  plugins: [structureTool({structure}), visionTool(), markdownSchema()],
+  plugins: [structureTool({structure}), visionTool(), markdownSchema({input: CustomMarkdownInput})],
 
   schema: {
     types: schemaTypes,

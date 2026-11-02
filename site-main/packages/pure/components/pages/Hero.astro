@@ -8,14 +8,25 @@ interface Props {
   // `ImageMetadata` object the local-collection schema describes.
   data: Omit<InferEntrySchema<'writing'>, 'heroImage'> & {
     heroImage?: { src: string; alt?: string; width?: number; height?: number; color?: string }
+    heroVideo?: { src: string }
   }
   remarkPluginFrontmatter: Record<string, unknown>
 }
 
 const {
-  data: { title, description, draft, heroImage, publishDate, updatedDate, tags, language },
+  data: { title, description, draft, heroImage, heroVideo, publishDate, updatedDate, tags, language },
   remarkPluginFrontmatter
 } = Astro.props
+
+// The glow behind the hero is blurred 24px, so it needs almost no resolution.
+// It used to reuse the full hero file, and on the snowplow post that full-size
+// GIF under a blur filter became the LCP element at 17s on mobile. Sanity
+// resizes it here; with `fm=webp` an animated GIF stays animated (all frames
+// survive), so the glow still moves - at ~30KB instead of ~190KB.
+const GLOW_WIDTH = 96
+const glowSrc = heroImage?.src.startsWith('https://cdn.sanity.io/images/')
+  ? `${heroImage.src.split('?')[0]}?w=${GLOW_WIDTH}&fm=webp&q=60`
+  : heroImage?.src
 
 const dateTimeOptions: Intl.DateTimeFormatOptions = {
   month: 'short'
@@ -62,32 +73,55 @@ const dateTimeOptions: Intl.DateTimeFormatOptions = {
 </div>
 
 {
-  heroImage && (
+  (heroImage || heroVideo) && (
     <div class='hero-image relative mt-6'>
-      {/* Plain <img>, not astro:assets: these are remote Sanity URLs on an
-          on-demand route, so each <Image> cost a serverless sharp invocation to
-          redo work the Sanity CDN had already done - and converting format that
-          way flattens an animated GIF to its first frame. */}
-      <img
-        src={heroImage.src}
-        alt={heroImage.alt || title}
-        width={heroImage.width}
-        height={heroImage.height}
-        class='cover-image relative z-10 h-48 w-full max-w-[65ch] rounded-2xl object-cover'
-        fetchpriority='high'
-        loading='eager'
-        decoding='async'
-      />
-      {/* Same bytes as above, so the browser serves this one from cache. */}
-      <img
-        src={heroImage.src}
-        alt=''
-        aria-hidden='true'
-        id='blurImage'
-        class='absolute end-0 top-4 z-0 mt-0 h-48 max-w-[65ch] rounded-3xl opacity-60 transition-opacity duration-300'
-        loading='eager'
-        decoding='async'
-      />
+      {heroVideo ? (
+        /* Same lazy clip as body videos (scripts/lazy-video.ts): `preload="none"`
+           means the hero image paints first as the poster - and stays the LCP
+           element - before a byte of video is fetched. The script then starts it,
+           pauses it once scrolled away, and leaves it still with controls for
+           readers who prefer reduced motion. */
+        <video
+          data-lazy-video
+          src={heroVideo.src}
+          poster={heroImage?.src}
+          aria-label={heroImage?.alt || title}
+          muted
+          loop
+          playsinline
+          preload='none'
+          class='cover-image relative z-10 h-48 w-full max-w-[65ch] rounded-2xl bg-muted object-cover'
+        />
+      ) : (
+        /* Plain <img>, not astro:assets: these are remote Sanity URLs on an
+           on-demand route, so each <Image> cost a serverless sharp invocation to
+           redo work the Sanity CDN had already done - and converting format that
+           way flattens an animated GIF to its first frame. */
+        <img
+          src={heroImage!.src}
+          alt={heroImage!.alt || title}
+          width={heroImage!.width}
+          height={heroImage!.height}
+          class='cover-image relative z-10 h-48 w-full max-w-[65ch] rounded-2xl object-cover'
+          fetchpriority='high'
+          loading='eager'
+          decoding='async'
+        />
+      )}
+      {/* The glow always comes from the still image - a second, blurred copy of
+          the video would double what the hero streams. */}
+      {glowSrc && (
+        <img
+          src={glowSrc}
+          alt=''
+          aria-hidden='true'
+          id='blurImage'
+          class='absolute end-0 top-4 z-0 mt-0 h-48 max-w-[65ch] rounded-3xl opacity-60 transition-opacity duration-300'
+          loading='eager'
+          fetchpriority='low'
+          decoding='async'
+        />
+      )}
     </div>
   )
 }

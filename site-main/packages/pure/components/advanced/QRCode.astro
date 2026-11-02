@@ -1,21 +1,34 @@
 ---
 import config from 'virtual:config'
 
-const { content, class: className, ...props } = Astro.props
+interface Props {
+  content?: string
+  class?: string
+  /** Id of the element whose first click loads and draws the code. */
+  trigger?: string
+  [key: string]: unknown
+}
+
+const { content, class: className, trigger = 'get-qrcode', ...props } = Astro.props
+// Pinned: an unversioned CDN URL is only cacheable for a week and can change under us.
+const src = `${config.npmCDN}/qrcodejs@1.0.0/qrcode.min.js`
 ---
 
 <div id='qrcode-container' class={className} {...props}></div>
 
-<script is:inline src={`${config.npmCDN}/qrcodejs/qrcode.min.js`}></script>
-<script is:inline define:vars={{ content }}>
-  const renderContent = content ?? window.location.href
-  // Load qrcode
-  function loadQRcode(qrcodeContainer) {
-    if (!qrcodeContainer) throw new Error('qrcode container not found')
-    if (qrcodeContainer.innerHTML !== '') return
-    new QRCode(qrcodeContainer, renderContent)
-  }
-  const qrcodeContainer = document.getElementById('qrcode-container')
-  if (!qrcodeContainer) throw new Error('qrcode container not found')
-  loadQRcode(qrcodeContainer)
+{/* The library used to load as a parser-blocking third-party script on every
+    article, for a panel almost nobody opens. It now loads on the first click. */}
+<script is:inline define:vars={{ content, src, trigger }}>
+  const button = document.getElementById(trigger)
+  const container = document.getElementById('qrcode-container')
+  button?.addEventListener(
+    'click',
+    () => {
+      const script = document.createElement('script')
+      script.src = src
+      script.onload = () => new QRCode(container, content ?? window.location.href)
+      document.head.append(script)
+    },
+    { once: true }
+  )
 </script>

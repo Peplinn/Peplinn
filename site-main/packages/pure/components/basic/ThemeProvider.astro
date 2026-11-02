@@ -1,5 +1,5 @@
 ---
-
+import { Icons } from '../../libs/icons'
 ---
 
 {/* Use inline mode to quick load color, which can avoid splash */}
@@ -19,8 +19,14 @@
   document.addEventListener('astro:page-load', () => simpleSetTheme())
 </script>
 
+{/* The toast's icon is rendered here, on the server. Importing `Icons` into the
+    client script below shipped the entire icon library (~49KB) to every page
+    just to draw this one glyph. */}
+<template id='toast-info-icon'>
+  <svg width='22' height='22' viewBox='0 0 24 24' fill='currentColor' set:html={Icons.info} />
+</template>
+
 <script>
-  import { Icons } from '../../libs/icons'
   import { listenThemeChange } from '../../utils'
 
   // Listen for theme change event
@@ -31,7 +37,11 @@
     const toast = document.createElement('div')
     toast.className =
       'animate fixed bottom-8 z-20 px-4 py-2 bg-muted text-foreground rounded-lg border shadow-lg flex items-center gap-2'
-    toast.innerHTML = `<svg width='22' height='22' viewBox='0 0 24 24' fill='currentColor'>${Icons.info}</svg> <span>${message}</span>`
+    const icon = document.getElementById('toast-info-icon') as HTMLTemplateElement | null
+    if (icon) toast.append(icon.content.cloneNode(true))
+    const text = document.createElement('span')
+    text.textContent = message
+    toast.append(text)
     document.body.appendChild(toast)
     setTimeout(() => {
       toast.remove()
