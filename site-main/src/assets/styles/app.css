@@ -342,3 +342,11 @@ details.callout:not([open]) {
   border-radius: var(--radius);
   background-color: hsl(var(--muted) / 1);
 }
+
+/* Heading permalinks fade in on hover (see uno.config.ts). Touch screens have no
+   hover, so keep them faintly visible there or they could never be tapped. */
+@media (hover: none) {
+  .prose a.anchor {
+    opacity: 0.4;
+  }
+}

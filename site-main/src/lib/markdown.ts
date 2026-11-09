@@ -214,6 +214,19 @@ function lazyLoadRawImages(html: string): string {
 }
 
 /**
+ * `gfmHeadingId` gives every heading an id but nothing to click. Append a `#`
+ * permalink so a reader can grab the URL of any section; its show-on-hover styling
+ * lives with the other prose heading rules in uno.config.ts.
+ */
+function addHeadingAnchors(html: string): string {
+  return html.replace(
+    /<h([1-6]) id="([^"]+)">([\s\S]*?)<\/h\1>/g,
+    (_, level, id, text) =>
+      `<h${level} id="${id}">${text}<a class="anchor" href="#${id}" aria-label="Link to this section">#</a></h${level}>`
+  )
+}
+
+/**
  * A fresh `Marked` for every call - deliberately NOT shared.
  *
  * `marked-footnote` keeps mutable state (`hasFootnotes`) alongside its extensions
@@ -247,7 +260,7 @@ async function createMarked(eagerFirstImage = true) {
 export async function renderMarkdown(markdown: string, { hasHero = false } = {}) {
   const instance = await createMarked(!hasHero)
   const html = await instance.parse(markdown || '')
-  return lazyLoadRawImages(html)
+  return addHeadingAnchors(lazyLoadRawImages(html))
 }
 
 /** Headings for the sidebar TOC, slugged to match `gfmHeadingId`'s anchors. */
