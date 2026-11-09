@@ -83,7 +83,10 @@ const nowUpdated = now?.updatedAt
   {
     nowHtml && (
       <>
-        <h2 id='now'>{now!.heading}</h2>
+        <h2 id='now'>
+          {now!.heading}
+          <a class='anchor' href='#now' aria-label='Link to this section'>#</a>
+        </h2>
         {nowUpdated && (
           <p class='not-prose -mt-2 mb-4 text-sm text-muted-foreground'>
             Last updated {nowUpdated}
@@ -98,7 +101,10 @@ const nowUpdated = now?.updatedAt
   {
     showBookshelf && (
       <>
-        <h2 id='bookshelf'>{bookshelfHeading}</h2>
+        <h2 id='bookshelf'>
+          {bookshelfHeading}
+          <a class='anchor' href='#bookshelf' aria-label='Link to this section'>#</a>
+        </h2>
         {about?.bookshelfIntro && <p>{about.bookshelfIntro}</p>}
 
         <Bookshelf groups={groupedBooks} />

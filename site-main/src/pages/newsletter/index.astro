@@ -31,9 +31,10 @@ const meta = {
       <p class='mb-6 text-muted-foreground'>{meta.description}</p>
     </div>
 
-    {/* Above the archive deliberately: signing up is the point of the page. */}
+    {/* At the top, but in its quiet variant and ruled off from the archive, so
+        the issues read as the page's content rather than the form. */}
     <div class='animate'>
-      <SubscribeForm {status} />
+      <SubscribeForm {status} variant='subtle' />
     </div>
 
     {

@@ -10,12 +10,26 @@
 interface Props {
   /** Set from the `?subscribed=` param after a no-JS submission. */
   status?: 'yes' | 'no' | null
+  /**
+   * `subtle` drops the card treatment so the form doesn't compete with the page
+   * it sits on - used at the top of /newsletter, above the archive.
+   */
+  variant?: 'card' | 'subtle'
 }
 
-const { status = null } = Astro.props
+const { status = null, variant = 'card' } = Astro.props
+const subtle = variant === 'subtle'
 ---
 
-<section class='subscribe not-prose rounded-xl border bg-muted/50 px-4 py-3'>
+<section
+  class:list={[
+    'subscribe not-prose',
+    subtle ? 'border-b pb-6' : 'rounded-xl border bg-muted/50 px-4 py-3'
+  ]}
+>
+  <h2 class:list={['font-display font-medium', subtle ? 'mb-2 text-lg' : 'mb-3 text-xl']}>
+    My email list
+  </h2>
   <form
     class='flex flex-col gap-2 sm:flex-row sm:items-center'
     method='post'
@@ -29,11 +43,19 @@ const { status = null } = Astro.props
       required
       autocomplete='email'
       placeholder='you@email.com'
-      class='w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none transition-colors focus:border-foreground'
+      class:list={[
+        'w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none transition-colors focus:border-foreground',
+        subtle && 'sm:max-w-xs'
+      ]}
     />
     <button
       type='submit'
-      class='shrink-0 rounded-lg border border-foreground bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60'
+      class:list={[
+        'shrink-0 rounded-lg border px-4 py-1.5 text-sm font-medium transition-opacity disabled:opacity-60',
+        subtle
+          ? 'border-border bg-transparent text-foreground hover:bg-muted'
+          : 'border-foreground bg-foreground text-background hover:opacity-90'
+      ]}
     >
       Subscribe
     </button>
